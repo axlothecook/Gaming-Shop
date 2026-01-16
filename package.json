@@ -1,0 +1,32 @@
+{
+  "name": "gaming-shop",
+  "version": "1.0.0",
+  "description": "Inventory app practice of Node JS and PostgreSQL's CRUD principles.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/axlothecook/Gaming-Shop.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/axlothecook/Gaming-Shop/issues"
+  },
+  "homepage": "https://github.com/axlothecook/Gaming-Shop#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ejs": "^3.1.10",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.1",
+    "lodash": "^4.17.21",
+    "morgan": "^1.10.1",
+    "nodemon": "^3.1.11",
+    "pg": "^8.16.3"
+  }
+}
