@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/svgs.css">
+    <link rel="stylesheet" href="/categoriesStyle.css">
+    <title><%= title %></title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="global-wrapper">
+        <%- include('partials/navbar', { navLinks }) %>
+        <div class="content">
+            <section>
+                <div class="title-and-add-btn-div">
+                    <h1>Genres</h1>
+                    <a href="/genres/new">
+                        <button class="add-btn">Add a Genre</button>
+                    </a>
+                </div>
+                <div class="category-wrapper">
+                    <% genresListArray.forEach(item => { %>
+                        <a href="/genres/<%= item.id %>">
+                            <div class="category-card" style="background-image: <%= item.url %>">
+                                <div class="genre-card">
+                                    <h3><%= item.name %></h3>
+                                </div>
+                            </div>
+                        </a>
+                    <% }) %>
+                </div>
+            </section>
+            <section>
+                <div class="title-and-add-btn-div">
+                    <h1>Developers</h1>
+                    <a href="/developers/new">
+                        <button class="add-btn">Add a Developer</button>
+                    </a>
+                </div>
+                <div class="category-wrapper">
+                    <% devsListArray.forEach(item => { %>
+                        <a href="/developers/<%= item.id %>">
+                            <div class="category-card dev-card" style="background-image: <%= item.url %>"></div>
+                        </a>
+                    <% }) %>
+                </div>
+            </section>
+        </div>
+    </div>
+    <%- include('partials/footbar') %>
+</body>
+</html>

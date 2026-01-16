@@ -1,0 +1,55 @@
+.copyright-svg {
+    width: 1.3rem;
+    fill: transparent;
+}
+
+.ruleset-svg {
+    width: 2rem;
+}
+
+.games-icon, .rocket-svg {
+    width: 4rem;
+}
+
+.filter-arrow {
+    width: 1rem;
+}
+
+.check-type {
+    width: 1.5rem;
+    fill: transparent;
+}
+
+.arrow-left {
+    width: .6rem;
+}
+
+.star {
+    fill: goldenrod;
+}
+
+.star-small {
+    width: 1.1rem;
+}
+
+.star-big {
+    width: 2rem;
+}
+
+@media only screen and (max-width:  907px) {
+    .star-big {
+        width: 1.5rem;
+    }
+}
+
+@media only screen and (max-width:  675px) {
+    .check-type {
+        width: 1.1rem;
+    }
+}
+
+@media only screen and (max-width:  480px) {
+    .star-small {
+        width: .8rem;
+    }
+}

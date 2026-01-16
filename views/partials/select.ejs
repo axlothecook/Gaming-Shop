@@ -1,0 +1,23 @@
+<div class="create-selects">
+    <h2><%= title %></h2>
+    <% for (let i = 0; i < number; i++) { %>
+        <% if (i === 0) { %>
+            <div class="optional-select">
+                <select name="<%= field %>-<%= i %>" id="<%= field %>-<%= i %>">
+                    <option value="" selected="selected">None</option>
+                    <% array.forEach(type => { %>
+                        <option value="<%= type.name %>"><%= type.name %></option>
+                    <% }) %>
+                </select>
+                <h4>* Required</h4>
+            </div>
+        <% } else { %>
+            <select name="<%= field %>-<%= i %>" id="<%= field %>-<%= i %>">
+                <option value="" selected="selected">None</option>
+                <% array.forEach(type => { %>
+                    <option value="<%= type.name %>"><%= type.name %></option>
+                <% }) %>
+            </select>
+        <% } %>
+    <% } %>
+</div>

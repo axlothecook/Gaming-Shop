@@ -1,0 +1,14 @@
+<nav>
+    <ul>
+        <div>
+            <% for (let i = 0; i < navLinks.length; i++) { %>
+                <li>
+                    <a href="<%= navLinks[i].href %>">
+                        <span><%= navLinks[i].text %></span>
+                    </a>
+                </li>
+            <% } %>
+        </div>
+        <%- include ('searchBar') %>
+    </ul>
+</nav>

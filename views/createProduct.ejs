@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/svgs.css">
+    <link rel="stylesheet" href="/editProductStyle.css">
+    <title><%= title %></title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="global-wrapper">
+        <%- include('partials/navbar', { navLinks }) %>
+        <% if (errors && errors.length !== 0) { %>
+            <%- include('partials/errors', { errors }) %>
+        <% } %>
+        <div class="content">
+            <a href="/products" class="btn"><%= btnTitle %></a>
+            <form class="main-content" method="POST" action="/products/new">
+                <h1><%= title %></h1>
+                <div class="main-content-child">
+                    <div class="inputs-wrapper">
+                        <div>
+                            <label for="name">Name</label>
+                            <input type="text" id="create-game-name" name="name" autocomplete="off" required />
+                        </div>
+                        <div>
+                            <label for="price">Price</label>
+                            <input type="number" id="create-game-price" name="price" autocomplete="off" required />
+                        </div>
+                        <div>
+                            <label for="rating">Rating</label>
+                            <input type="number" id="create-game-rating" name="rating" autocomplete="off" max required />
+                        </div>
+                        <div>
+                            <label for="description">Description</label>
+                            <textarea type="text" id="create-game-description" name="description" autocomplete="off" required></textarea>
+                        </div>
+                        <div class="image-input-wrapper">
+                            <label for="gameImg">Photo</label>
+                            <input type="file" class="image-input" name="gameImg" accept="image/png, image/jpeg" required />
+                        </div>
+                    </div>
+                    <div class="selects-wrapper">
+                        <%- include('partials/select', { array: genresListArray, title: 'Genres', field: 'genre', number: 5 }) %>
+                        <%- include('partials/select', { array: devsListArray, title: 'Developers', field: 'dev', number: 3 }) %>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Done</button>
+            </form>
+        </div>
+    </div>
+    <%- include('partials/footbar') %>
+</body>
+</html>
+
+<script>
+    function testForError() {
+        const error = document.getElementById('error-wrapper');
+        if(document.body.contains(error)) {
+            setTimeout(() => {
+                error.style.display = 'none';
+            }, 3000);
+        };
+    };
+
+    testForError();
+</script>

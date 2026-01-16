@@ -1,0 +1,16 @@
+<div class="edit-selects">
+    <h2><%= title %></h2>
+    <% subArray.forEach((item, idx) => { %>
+        <select name="<%= field %>-<%= idx %>" id="<%= field %>-<%= idx %>">
+            <% generalArray.forEach(type => { %>
+                <% if (item == type.name) { %>
+                    <option value="<%= type.name %>" selected="selected"><%= type.name %></option>
+                <% } else { %>
+                    <option value="<%= type.name %>"><%= type.name %></option>
+                <% } %>
+            <% }) %>
+            <option value="">None</option>
+        </select>
+    <% }) %>
+</div>
+
