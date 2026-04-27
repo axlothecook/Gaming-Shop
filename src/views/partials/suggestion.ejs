@@ -1,0 +1,14 @@
+<div class="edit-selects">
+    <h2><%= title %></h2>
+    <select name="<%= field %>" id="<%= field %>" multiple>
+        
+        <% for(let i = 0; i < generalArray.length; i++) { %>
+            <% if (subArray.includes(generalArray[i].name)) { %>
+                <option value="<%= generalArray[i].name %>" selected="selected"><%= generalArray[i].name %></option>
+            <% } else { %>
+                <option value="<%= generalArray[i].name %>"><%= generalArray[i].name %></option>
+            <% } %>
+        <% } %>
+    </select>
+</div>
+

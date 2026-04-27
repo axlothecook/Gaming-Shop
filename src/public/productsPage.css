@@ -1,0 +1,151 @@
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    width: 100%;
+}
+
+.title-and-add-btn-div {
+    gap: 5.5rem;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    gap: 2rem;
+}
+
+.sort-by-section div {
+    padding-top: .7rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.sort-by-section div button, .radio-input-container, .pagination-form  {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: .5rem;
+}
+
+.pagination-form {
+    padding: 1rem 0;
+    justify-content: center;
+}
+
+select {
+    width: 100%;
+    height: 10rem;
+}
+
+.long-radio-input-div {
+    max-height: 13rem;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding: .5rem;
+
+}
+
+.radio-input-div {
+    flex-direction: column;
+    gap: .6rem;
+    padding: .5rem;
+}
+
+.filters-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.filter-category {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .4rem 1rem;
+    border: 1px solid var(--main-txt-clr);
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.filter-category:hover {
+    background-color: brown;
+}
+
+.filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.filter-form button {
+    margin-right: auto;
+}
+
+.filter-submit-btn {
+    display: flex;
+    align-items: center;
+    padding-top: .7rem;
+    padding-left: .7rem;
+}
+
+.filter-submit-btn h3 {
+    font-size: 1rem;
+    font-weight: 200;
+    margin-left: 1rem;
+}
+
+@media only screen and (max-width:  1420px) {
+    .main-content {
+        grid-template-columns: 1fr 3fr;
+    }
+
+    .products-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media only screen and (max-width:  935px) {
+    .main-content {
+        grid-template-columns: 1fr 2fr;
+    }
+
+    .products-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media only screen and (max-width:  675px) {
+    .main-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .title-and-add-btn-div {
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .filters-wrapper {
+        gap: 1rem;
+    }
+
+
+    .filter-form {
+        max-height: 14rem;
+        overflow-y: scroll;
+        padding-bottom: .7rem;
+        border: 1px solid var(--main-txt-clr);
+        border-radius: 7px;
+        border-top: none;
+    }
+
+    .filter-submit-btn h3 {
+        font-size: .8rem;
+        margin-left: .5rem;
+    }
+}

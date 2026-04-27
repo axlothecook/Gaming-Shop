@@ -1,0 +1,11 @@
+<div class="create-selects">
+    <h4><%= title %></h4>
+    <div>
+        <select name="<%= field %>" id="<%= field %>" multiple>
+            <% array.forEach(type => { %>
+                <option value="<%= type.name %>"><%= type.name %></option>
+            <% }) %>
+        </select>
+        <h4>* At least one is required</h4>
+    </div>
+</div>
