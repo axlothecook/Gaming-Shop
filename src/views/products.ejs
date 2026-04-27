@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/svgs.css">
+    <link rel="stylesheet" href="/productsPage.css">
+    <title><%= title %></title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="global-wrapper">
+        <%- include('partials/navbar', { navLinks }) %>
+        <div class="content">
+            <div class="title-and-add-btn-div">
+                <h1>Games</h1>
+                <a href="/games/new">
+                    <button class="add-btn">Add a <%= btnText %></button>
+                </a>
+            </div>
+            <div class="main-content">
+                <div class="filters-wrapper">
+                    <form method="GET" action="/games" class="filter-form" id="filter-form">
+                        <div>
+                            <h2>Sort By</h2>
+                            <div class="radio-input-div">
+                                <div class="radio-input-container">
+                                    <input type="radio" id="ascending" name="sort" value="1" />
+                                    <label for="ascending">
+                                        <h3>Ascending</h3>
+                                    </label>
+                                </div>
+                                <div class="radio-input-container">
+                                    <input type="radio" id="decending" name="sort" value="-1" />
+                                    <label for="decending">
+                                        <h3>Descending</h3>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- name -->
+                        <section>
+                            <div class="create-selects">
+                                <div class="filter-category" onclick="toggleDevDropDown()">
+                                    <h2>Name</h2>
+                                    <%- include('svgs/filterArrow') %>
+                                </div>
+                                <div>
+                                    <select name="alphabet" id="alphabet-select" multiple>
+                                        <% alphabetArray.forEach(word => { %>
+                                            <option value="<%= word %>">
+                                                <%= word %>
+                                            </option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- price -->
+                        <section>
+                            <div class="create-selects">
+                                <div class="filter-category" onclick="toggleDevDropDown()">
+                                    <h2>Price</h2>
+                                    <%- include('svgs/filterArrow') %>
+                                </div>
+                                <div class="long-radio-input-div">
+                                    <% priceArray.forEach(num => { %>
+                                        <% if (!num) { %>
+                                            <div class="radio-input-container">
+                                                <input type="radio" id="NaN" name="price" value="NaN" />
+                                                <label for="NaN">
+                                                    <h4>Not out yet</h4>
+                                                </label>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="radio-input-container">
+                                                <input type="radio" id="<%= num %>" name="price" value="<%= num %>" />
+                                                <label for="<%= num %>">
+                                                    <h4>
+                                                        <% if (num === 0) { %>
+                                                            Free
+                                                        <% } else { %>
+                                                            <%= num %>
+                                                        <% } %>
+                                                    </h4>
+                                                </label>
+                                            </div>
+                                        <% } %>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- rating -->
+                        <section>
+                            <div class="create-selects">
+                                <div class="filter-category" onclick="toggleDevDropDown()">
+                                    <h2>Rating</h2>
+                                    <%- include('svgs/filterArrow') %>
+                                </div>
+                                <div>
+                                    <select name="rating" id="rating-select" multiple>
+                                        <% ratingArray.forEach(num => { %>
+                                            <% if (num === null) { %>
+                                                <option value="NaN">Not out yet</option>
+                                            <% } else { %>
+                                                <option value="<%= num %>">
+                                                    <%= num %>
+                                                </option>
+                                            <% } %>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- genre -->
+                        <section>
+                            <div class="create-selects">
+                                <div class="filter-category" onclick="toggleGenreDropDown()">
+                                    <h2>Genre</h2>
+                                    <%- include('svgs/filterArrow') %>
+                                </div>
+                                <div>
+                                    <select name="genre" id="genre-select" multiple>
+                                        <% genresListArray.forEach(genre => { %>
+                                            <option value="<%= genre.name %>">
+                                                <h4><%= genre.name %></h4>
+                                                <h4>[ <%= genre.numberOfGames %> ]</h4>
+                                            </option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- devs -->
+                        <section>
+                            <div class="create-selects">
+                                <div class="filter-category" onclick="toggleDevDropDown()">
+                                    <h2>Developer</h2>
+                                    <%- include('svgs/filterArrow') %>
+                                </div>
+                                <div>
+                                    <select name="dev" id="dev-select" multiple>
+                                        <% devsListArray.forEach(dev => { %>
+                                            <option value="<%= dev.name %>">
+                                                <h4><%= dev.name %></h4>
+                                                <h4>[ <%= dev.numberOfGames %> ]</h4>
+                                            </option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+                        <button class="btn" style="width: 100%;" type="submit">Filter</button>
+                    </form>
+                </div>
+                <div class="product-list-container">
+                    <div class="products-list">
+                        <%- include('partials/productCard', { productsArr }) %>
+                    </div>
+                    <form method="GET" action="/games" class="pagination-form" id="pagination-form">
+                        <% for (let i = 1; i <= pagesCount; i++) { %>
+                            <div>
+                                <input type="radio" id="<%= i %>" name="page" value="<%= i %>" />
+                                <label for="<%= i %>"><%= i %></label>
+                            </div>
+                        <% } %>
+                        <button class="btn" type="submit">submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include('partials/footbar') %>
+</body>
+</html>
+
+<script>
+    const dropDownGenre = document.getElementById('genreListForm');
+    const dropDownDev = document.getElementById('devsListForm');
+    let genreCounter = false;
+    let devsCounter = false;
+    const toggleGenreDropDown = () => {
+        genreCounter = !genreCounter;
+        genreCounter ? dropDownGenre.style.display = 'flex' : dropDownGenre.style.display = 'none';
+    };
+    const toggleDevDropDown = () => {
+        devsCounter = !devsCounter;
+        devsCounter ? dropDownDev.style.display = 'flex' : dropDownDev.style.display = 'none';
+    };
+</script>
