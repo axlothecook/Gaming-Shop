@@ -42,7 +42,7 @@ async function saveFile (req, res, cb) {
   let results;
   await uploadMiddleware(req, res, (err) => {
     results = processingResults(req, res, err);
-    console.log('results: ', results);
+    // console.log('results: ', results);
   });
 
   setTimeout(function () {

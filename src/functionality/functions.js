@@ -62,6 +62,7 @@ const filterQuery = (() => {
 const updateGamesGenreArr = async (arr, db, genreToRemove, newName = null) => {
     let tempArr = arr;
     // console.log('tempArr: ', tempArr);
+    // console.log('genreToRemove: ', genreToRemove);
     tempArr.map(async game => {
         let tempGenreArr = game.genres;
         const index = tempGenreArr.indexOf(genreToRemove);

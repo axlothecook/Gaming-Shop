@@ -38,25 +38,25 @@ gamesRouter.post('/new',
 gamesRouter.get('/:id', gamesControllers.getIndividualProduct);
 gamesRouter.get('/:id/update', gamesControllers.getUpdateProduct);
 gamesRouter.post('/:id/update',
-  // timeout('5s'), 
-  // haltOnTimedout, 
-  // function (req, res, next) {
-  //   saveFile(req, res, function (err) {
-  //     if (err) {
-  //       console.log('game update error did get delivered');
-  //       console.log(err.message);
-  //       req.err = err.message;
-  //     }
-  //     if (req.timedout) {
-  //       err = {
-  //         statusCode: 408,
-  //         message: 'The server timed out waiting for the request.'
-  //       };
-  //       return next(err)
-  //     };
-  //     next();
-  //   });
-  // }, 
+  timeout('5s'), 
+  haltOnTimedout, 
+  function (req, res, next) {
+    saveFile(req, res, function (err) {
+      if (err) {
+        console.log('game update error did get delivered');
+        console.log(err.message);
+        req.err = err.message;
+      }
+      if (req.timedout) {
+        err = {
+          statusCode: 408,
+          message: 'The server timed out waiting for the request.'
+        };
+        return next(err)
+      };
+      next();
+    });
+  }, 
   gamesControllers.postUpdateProduct);
 
 gamesRouter.get('/:id/delete', gamesControllers.getDeleteProduct);
