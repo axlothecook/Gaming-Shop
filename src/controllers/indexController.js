@@ -62,14 +62,23 @@ const getSearchedProduct =  [
             await gamesDb.createIndex({ name: "text" });
             const query = { $text: { $search: searchString } };
             const productsArr = await gamesDb.find(query).project(projectFields).toArray();
-            res.render('search', {
-                title: `Search results for ${searchString}`,
-                btnTitle: 'Go back to Products',
-                navLinks,
-                productsArr
+            // res.render('search', {
+            //     title: `Search results for ${searchString}`,
+            //     btnTitle: 'Go back to Products',
+            //     navLinks,
+            //     productsArr
+            // });
+            res.status(200).send({
+                success: true,
+                data: {
+                    productsArr
+                }
             });
         } catch (err) {
-            throw new Error(`error when getting search results.`, err);
+            // throw new Error(`error when getting search results.`, err);
+            res.status(500).send({
+                err: err ? err : 'Error occured while searching for the game.'
+            });
         };
     }
 ];

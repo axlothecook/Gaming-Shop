@@ -285,14 +285,17 @@ const getIndividualProduct = async (req, res) => {
                 }
             });
         } else {
-            console.error('error retrieving the game');
+            // console.error('error retrieving the game');
             // res.redirect('/games');
             res.status(500).send({
-                err: err ? err : 'Error occured while retrieving the game.'
+                err: err ? err : 'Error occured while retrieving the game due to invalid ID provided.'
             });
         };
     } catch (err) {
-        throw new Error(`Error occured while retrieving the game.`, err);
+        // throw new Error(`Error occured while retrieving the game.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while retrieving the game.'
+        });
     };
 };
 

@@ -52,6 +52,7 @@ const getAllDevelopers = async (req, res) => {
         res.status(200).send({
             success: true,
             data: {
+                title: "Developers",
                 path,
                 arr: devArr,
             }
@@ -77,30 +78,35 @@ const getSpecificDeveloper= async (req, res) => {
             const productsArr = await db.collection(gamesPath).find({ developers: dev.name }).sort(sortBy).project(projectFields).toArray();
             // console.log(productsArr);
 
-            res.render('partials/genreAndDevTemplate', {
-                title: `${dev.name}`,
-                btnTitle: 'Go back to categories',
-                path,
-                imgStyling: '70% 120%',
-                navLinks,
-                category: dev,
-                productsArr,
+            // res.render('partials/genreAndDevTemplate', {
+            //     title: `${dev.name}`,
+            //     btnTitle: 'Go back to categories',
+            //     path,
+            //     imgStyling: '70% 120%',
+            //     navLinks,
+            //     category: dev,
+            //     productsArr,
+            // });
+
+            res.status(200).send({
+                success: true,
+                data: {
+                    path,
+                    dev,
+                    productsArr
+                }
             });
         } else {
-            // devs route that doesnt exist here
-            // res.status(400).render('categories', {
-            //     title: 'Categories',
-            //     navLinks,
-            //     genresListArray,
-            //     devArr,
-            //     errors: [{
-            //         msg: 'Invalid developer ID.'
-            //     }],
-            // });
-            throw new Error(`Error occured while fetching the developer.`, err);
+            // throw new Error(`Error occured while fetching the developer.`, err);
+            res.status(500).send({
+                err: err ? err : 'Error occured while retrieving the developer due to invalid ID provided.'
+            });
         };
     } catch (err) {
-        throw new Error(`Error occured while fetching the developer.`, err);
+        // throw new Error(`Error occured while fetching the developer.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while fetching the developer.'
+        });
     };
 };
 

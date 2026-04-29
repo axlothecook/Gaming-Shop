@@ -71,6 +71,7 @@ const getSpecificGenre = async (req, res) => {
     try {
         console.log(req.params.id);
         if (ObjectId.isValid(req.params.id)) {
+            console.log('id is valid');
             const db = getDb();
             const genre = await db.collection(path).findOne({ _id: new ObjectId(req.params.id) });
             console.log(genre);
@@ -79,31 +80,37 @@ const getSpecificGenre = async (req, res) => {
             const productsArr = await db.collection(gamesPath).find({ genres: genre.name }).sort(sortBy).project(projectFields).toArray();
             // console.log(productsArr);
 
-            res.render('partials/genreAndDevTemplate', {
-                title: `${genre.name}`,
-                btnTitle: 'Go back to categories',
-                path,
-                imgStyling: '70% 120%',
-                navLinks,
-                category: genre,
-                productsArr,
+            // res.render('partials/genreAndDevTemplate', {
+            //     title: `${genre.name}`,
+            //     btnTitle: 'Go back to categories',
+            //     path,
+            //     imgStyling: '70% 120%',
+            //     navLinks,
+            //     category: genre,
+            //     productsArr,
+            // });
+
+            res.status(200).send({
+                success: true,
+                data: {
+                    path,
+                    genre,
+                    productsArr
+                }
             });
         } else {
-            // genres route that doesnt exist here
-            // res.status(400).render('categories', {
-            //     title: 'Categories',
-            //     navLinks,
-            //     genresListArray,
-            //     devArr,
-            //     errors: [{
-            //         msg: 'Invalid genre ID.'
-            //     }],
-            // });
-            throw new Error(`Error occured while fetching the genre.`, err);
+            console.log('id is not valid');
+            res.status(500).send({
+                err: err ? err : 'Error occured while retrieving the genre due to invalid ID provided.'
+            });
+            // throw new Error(`Error occured while fetching the genre.`, err);
         };
-        // res.redirect('/category');
     } catch (err) {
-        throw new Error(`Error occured while fetching the genre.`, err);
+        // throw new Error(`Error occured while fetching the genre.`, err);
+        console.log('smt else');
+        res.status(500).send({
+            err: err ? err : 'Error occured while fetching the genre.'
+        });
     }
 };
 
