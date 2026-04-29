@@ -15,7 +15,7 @@ const {
 } = require('../../data');
 const {
     generateName,
-    updateGamesDevArray
+    updateGamesGenreArr
 } = require('../functionality/functions');
 
 const path = process.env.GENRE_PATH;
@@ -79,48 +79,38 @@ const getSpecificGenre = async (req, res) => {
             const productsArr = await db.collection(gamesPath).find({ genres: genre.name }).sort(sortBy).project(projectFields).toArray();
             // console.log(productsArr);
 
-            res.render('partials/genreAndDevTemplate', {
-                title: `${genre.name}`,
-                btnTitle: 'Go back to categories',
-                path,
-                imgStyling: '70% 120%',
-                navLinks,
-                category: genre,
-                productsArr,
+            // res.render('partials/genreAndDevTemplate', {
+            //     title: `${genre.name}`,
+            //     btnTitle: 'Go back to categories',
+            //     path,
+            //     imgStyling: '70% 120%',
+            //     navLinks,
+            //     category: genre,
+            //     productsArr,
+            // });
+            res.status(200).send({
+                success: true,
+                data: {
+                    path,
+                    genre,
+                    productsArr
+                }
             });
         } else {
-            // genres route that doesnt exist here
-            // res.status(400).render('categories', {
-            //     title: 'Categories',
-            //     navLinks,
-            //     genresListArray,
-            //     devArr,
-            //     errors: [{
-            //         msg: 'Invalid genre ID.'
-            //     }],
-            // });
-            throw new Error(`Error occured while fetching the genre.`, err);
+            console.log('id is not valid');
+            res.status(500).send({
+                err: err ? err : 'Error occured while retrieving the genre due to invalid ID provided.'
+            });
         };
-        // res.redirect('/category');
     } catch (err) {
-        throw new Error(`Error occured while fetching the genre.`, err);
+        console.log('smt else');
+        res.status(500).send({
+            err: err ? err : 'Error occured while fetching the genre.'
+        });
     }
 };
 
 // CREATE A GENRE
-const getCreateGenre = (req, res) => {
-    // const fetchedGenre = db.getSpecificGenre(req.params.id);
-    console.log('PROVIDING GENRE CREATE');
-
-    res.render('createGenreAndDev', {
-        title: 'Add a new genre',
-        btnTitle: 'Go back',
-        navLinks,
-        path,
-        errors: null,
-    });
-};
-
 const postCreateGenre = [
     validateGenre,
     async (req, res) => {
@@ -130,26 +120,37 @@ const postCreateGenre = [
 
             if (req.err) {
                 console.log('req.err: ', req.err);
-                return res.status(400).render('createGenreAndDev', {
-                    title: 'Add a new genre',
-                    btnTitle: 'Go back',
-                    navLinks,
-                    path,
-                    errors: [{
-                        msg: req.err
-                    }]
+                // return res.status(400).render('createGenreAndDev', {
+                //     title: 'Add a new genre',
+                //     btnTitle: 'Go back',
+                //     navLinks,
+                //     path,
+                //     errors: [{
+                //         msg: req.err
+                //     }]
+                // });
+
+                res.status(400).send({
+                    errTpe: 'Multer',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
             
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 console.log('errors.isEmpty():', errors.isEmpty());
-                return res.status(400).render('createGenreAndDev', {
-                    title: 'Add a new genre',
-                    btnTitle: 'Go back',
-                    navLinks,
-                    path,
-                    errors: errors.array(),
+                // return res.status(400).render('createGenreAndDev', {
+                //     title: 'Add a new genre',
+                //     btnTitle: 'Go back',
+                //     navLinks,
+                //     path,
+                //     errors: errors.array(),
+                // });
+                res.status(400).send({
+                    errTpe: 'Validation',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
             
@@ -164,14 +165,19 @@ const postCreateGenre = [
             console.log('checkIfGenreAlreadyExists:', checkIfGenreAlreadyExists);
 
             if (checkIfGenreAlreadyExists) {
-                return res.status(400).render('createGenreAndDev', {
-                    title: 'Add a new genre',
-                    btnTitle: 'Go back',
-                    navLinks,
-                    path,
-                    errors: [{
-                        msg: 'Genre already exists.'
-                    }]
+                // return res.status(400).render('createGenreAndDev', {
+                //     title: 'Add a new genre',
+                //     btnTitle: 'Go back',
+                //     navLinks,
+                //     path,
+                //     errors: [{
+                //         msg: 'Genre already exists.'
+                //     }]
+                // });
+                res.status(404).send({
+                    errType: "Already exists",
+                    errBody: 'A genre with the same name already exists.',
+                    errCode: 404
                 });
             } else {
                 const file = req.file;
@@ -206,10 +212,21 @@ const postCreateGenre = [
                 console.log('newGenre:');
                 console.log(newGenre);
 
-                res.redirect(`/${path}/${newGenre._id}`);
+                // res.redirect(`/${path}/${newGenre._id}`);
+                res.status(200).send({
+                    success: true,
+                    data: {
+                        gameID: newGenre._id
+                    }
+                });
             };
         } catch (err) {
-            throw new Error(`Error occured while uploading photo of the genre.`, err);
+            // throw new Error(`Error occured while uploading photo of the genre.`, err);
+            res.status(500).send({
+                errType: "Other",
+                errBody: 'Error occured while creating a new genre.',
+                errCode: 500
+            });
         };
     }
 ];
@@ -223,30 +240,33 @@ const getUpdateGenre = async (req, res) => {
             const genre = await db.collection(path).findOne({ _id: new ObjectId(req.params.id) });
             console.log(genre);
 
-            res.render('editGenreAndDev', {
-                title: `Edit ${genre.name}`,
-                btnTitle: `Return to ${genre.name}`,
-                navLinks,
-                path,
-                category: genre,
-                errors: null
-            });
-        } else {
-            // genres route that doesnt exist here
-            // return res.status(400).render('editGenreAndDev', {
+            // res.render('editGenreAndDev', {
             //     title: `Edit ${genre.name}`,
             //     btnTitle: `Return to ${genre.name}`,
             //     navLinks,
             //     path,
             //     category: genre,
-            //     errors: [{
-            //         msg: 'Invalid genre ID.'
-            //     }],
+            //     errors: null
             // });
-            throw new Error(`Error occured while fetching the genre.`, err);
+
+            res.status(200).send({
+                success: true,
+                data: {
+                    path,
+                    genre
+                }
+            });
+        } else {
+            console.log('id is not valid');
+            res.status(500).send({
+                err: err ? err : 'Error occured while retrieving the genre due to invalid ID provided.'
+            });
         };
     } catch (err) {
-        throw new Error(`Error occured while fetching specific genre info.`, err);
+        console.log('smt else');
+        res.status(500).send({
+            err: err ? err : 'Error occured while fetching the genre.'
+        });
     };
 };
 
@@ -263,28 +283,40 @@ const postUpdateGenre = [
 
             if (req.err) {
                 console.log(req.err);
-                return res.status(400).render('editGenreAndDev', {
-                    title: `Edit ${genre.name}`,
-                    btnTitle: `Return to ${genre.name}`,
-                    navLinks,
-                    path,
-                    category: genre,
-                    errors: [{
-                        msg: req.err
-                    }]
+                // return res.status(400).render('editGenreAndDev', {
+                //     title: `Edit ${genre.name}`,
+                //     btnTitle: `Return to ${genre.name}`,
+                //     navLinks,
+                //     path,
+                //     category: genre,
+                //     errors: [{
+                //         msg: req.err
+                //     }]
+                // });
+
+                res.status(400).send({
+                    errTpe: 'Multer',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 console.log(errors.array());
-                return res.status(400).render('editGenreAndDev', {
-                    title: `Edit ${genre.name}`,
-                    btnTitle: `Return to ${genre.name}`,
-                    navLinks,
-                    path,
-                    category: genre,
-                    errors: errors.array(),
+                // return res.status(400).render('editGenreAndDev', {
+                //     title: `Edit ${genre.name}`,
+                //     btnTitle: `Return to ${genre.name}`,
+                //     navLinks,
+                //     path,
+                //     category: genre,
+                //     errors: errors.array(),
+                // });
+
+                res.status(400).send({
+                    errTpe: 'Validation',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
 
@@ -294,7 +326,7 @@ const postUpdateGenre = [
                 const projectFields = { _id: 1, name: 1, genres: 1 };
                 const gamesToUpdate = await gamesDb.find({ genres: genre.name }).project(projectFields).toArray();
                 let updateDoc;
-                console.log(genre);
+                // console.log(genre);
 
                 if (req.file) {
                     const file = req.file;
@@ -343,14 +375,27 @@ const postUpdateGenre = [
                     await genreDb.updateOne(query, updateDoc);
                 };
 
-                res.redirect(`/${path}/${req.params.id}`);
+                res.status(200).send({
+                    success: true,
+                });
+                // res.redirect(`/${path}/${req.params.id}`);
             } catch (err) {
-                throw new Error(`Error occured while uploading genre data`, err);
+                // throw new Error(`Error occured while uploading genre data`, err);
+                res.status(500).send({
+                    errType: "Other",
+                    errBody: 'Error occured while uploading update',
+                    errCode: 500
+                });
             };
 
         } else {
             // throw new Error(`Invalid genre id`, err);
-            res.redirect(`/games/${req.params.id}`);
+            // res.redirect(`/games/${req.params.id}`);
+            res.status(500).send({
+                errType: "ID",
+                errBody: 'Error occured due to invalid id.',
+                errCode: 500
+            });
         };
     }
 ];
@@ -385,17 +430,26 @@ const getDeleteGenre = async (req, res) => {
 
                 const deleteResult = await genreDb.deleteOne({ _id: new ObjectId(req.params.id) });
                 console.log('mongodb genre dlt: ', deleteResult);
-                res.redirect('/genres');
+                // res.redirect('/genres');
+                res.status(200).send({
+                    success: true,
+                });
             } else {
                 console.error('Error: ', warning);
-                res.redirect(`/${path}/${req.params.id}`);
+                // res.redirect(`/${path}/${req.params.id}`);
+                res.status(500).send({
+                    err: warning
+                });
             };
         } else {
-            // genres route that doesnt exist here
-            throw new Error(`Incorrect genre id.`, err);
+            res.status(500).send({
+                err: err ? err : 'Error occured while deleting the genre due to invalid ID provided.'
+            });
         };
     } catch (err) {
-        throw new Error(`Error occured while deleting the genre.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while deleting the genre.'
+        });
     };
 };
 
@@ -403,7 +457,7 @@ module.exports = {
     getAllGenres,
     getSpecificGenre,
 
-    getCreateGenre,
+    // getCreateGenre,
     postCreateGenre,
 
     getUpdateGenre,

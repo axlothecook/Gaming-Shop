@@ -8,7 +8,7 @@ const {
 var timeout = require('connect-timeout');
 
 genresRouter.get('/', genresController.getAllGenres);
-genresRouter.get('/new', genresController.getCreateGenre);
+// genresRouter.get('/new', genresController.getCreateGenre);
 genresRouter.post('/new',
   timeout('5s'), 
   haltOnTimedout, 

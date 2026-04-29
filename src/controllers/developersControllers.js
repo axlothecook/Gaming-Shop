@@ -52,6 +52,7 @@ const getAllDevelopers = async (req, res) => {
         res.status(200).send({
             success: true,
             data: {
+                title: "Developers",
                 path,
                 arr: devArr,
             }
@@ -77,46 +78,36 @@ const getSpecificDeveloper= async (req, res) => {
             const productsArr = await db.collection(gamesPath).find({ developers: dev.name }).sort(sortBy).project(projectFields).toArray();
             // console.log(productsArr);
 
-            res.render('partials/genreAndDevTemplate', {
-                title: `${dev.name}`,
-                btnTitle: 'Go back to categories',
-                path,
-                imgStyling: '70% 120%',
-                navLinks,
-                category: dev,
-                productsArr,
+            // res.render('partials/genreAndDevTemplate', {
+            //     title: `${dev.name}`,
+            //     btnTitle: 'Go back to categories',
+            //     path,
+            //     imgStyling: '70% 120%',
+            //     navLinks,
+            //     category: dev,
+            //     productsArr,
+            // });
+            res.status(200).send({
+                success: true,
+                data: {
+                    path,
+                    dev,
+                    productsArr
+                }
             });
         } else {
-            // devs route that doesnt exist here
-            // res.status(400).render('categories', {
-            //     title: 'Categories',
-            //     navLinks,
-            //     genresListArray,
-            //     devArr,
-            //     errors: [{
-            //         msg: 'Invalid developer ID.'
-            //     }],
-            // });
-            throw new Error(`Error occured while fetching the developer.`, err);
+            res.status(500).send({
+                err: err ? err : 'Error occured while retrieving the developer due to invalid ID provided.'
+            });
         };
     } catch (err) {
-        throw new Error(`Error occured while fetching the developer.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while fetching the developer.'
+        });
     };
 };
 
 // CREATE A DEVELOPER
-const getCreateDeveloper = (req, res) => {
-    console.log('PROVIDING DEV CREATE');
-
-    res.render('createGenreAndDev', {
-        title: 'Add a new developer',
-        btnTitle: 'Go back',
-        navLinks,
-        path,
-        errors: null,
-    });
-};
-
 const postCreateDeveloper = [
     validateDeveloper,
     async (req, res) => {
@@ -124,24 +115,35 @@ const postCreateDeveloper = [
             console.log('POSTING DEV NEW ADD');
             if (req.err) {
                 console.log(req.err);
-                return res.status(400).render('createGenreAndDev', {
-                    title: 'Add a new developer',
-                    btnTitle: 'Go back',
-                    navLinks,
-                    path,
-                    errors: [{
-                        msg: req.err
-                    }]
+                // return res.status(400).render('createGenreAndDev', {
+                //     title: 'Add a new developer',
+                //     btnTitle: 'Go back',
+                //     navLinks,
+                //     path,
+                //     errors: [{
+                //         msg: req.err
+                //     }]
+                // });
+                res.status(400).send({
+                    errTpe: 'Multer',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
+
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).render('createGenreAndDev', {
-                    title: 'Add a new developer',
-                    btnTitle: 'Go back',
-                    navLinks,
-                    path,
-                    errors: errors.array(),
+                // return res.status(400).render('createGenreAndDev', {
+                //     title: 'Add a new developer',
+                //     btnTitle: 'Go back',
+                //     navLinks,
+                //     path,
+                //     errors: errors.array(),
+                // });
+                res.status(400).send({
+                    errTpe: 'Validation',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
 
@@ -154,14 +156,19 @@ const postCreateDeveloper = [
             // console.log('checkIfDevAlreadyExists:', checkIfDevAlreadyExists);
 
             if (checkIfDevAlreadyExists) {
-                return res.status(400).render('createGenreAndDev', {
-                    title: 'Add a new genre',
-                    btnTitle: 'Go back',
-                    navLinks,
-                    path,
-                    errors: [{
-                        msg: 'Developer already exists.'
-                    }]
+                // return res.status(400).render('createGenreAndDev', {
+                //     title: 'Add a new genre',
+                //     btnTitle: 'Go back',
+                //     navLinks,
+                //     path,
+                //     errors: [{
+                //         msg: 'Developer already exists.'
+                //     }]
+                // });
+                res.status(404).send({
+                    errType: "Already exists",
+                    errBody: 'A developer with the same name already exists.',
+                    errCode: 404
                 });
             } else {
                 const file = req.file;
@@ -196,10 +203,21 @@ const postCreateDeveloper = [
                 console.log('newDev:');
                 console.log(newDev);
 
-                res.redirect(`/${path}/${newDev._id}`);
+                // res.redirect(`/${path}/${newDev._id}`);
+                res.status(200).send({
+                    success: true,
+                    data: {
+                        gameID: newDev._id
+                    }
+                });
             };
         } catch (err) {
-            throw new Error(`Error occured while uploading photo of the developer.`, err);
+            // throw new Error(`Error occured while uploading photo of the developer.`, err);
+            res.status(500).send({
+                errType: "Other",
+                errBody: 'Error occured while creating a new developer.',
+                errCode: 500
+            });
         };
     }
 ];
@@ -213,30 +231,32 @@ const getUpdateDeveloper = async (req, res) => {
             const dev = await db.collection(path).findOne({ _id: new ObjectId(req.params.id) });
             // console.log(dev);
 
-            res.render('editGenreAndDev', {
-                title: `Edit ${dev.name}`,
-                btnTitle: `Return to ${dev.name}`,
-                navLinks,
-                path,
-                category: dev,
-                errors: null
-            });
-        } else {
-            // devs route that doesnt exist here
-            // return res.status(400).render('editGenreAndDev', {
+            // res.render('editGenreAndDev', {
             //     title: `Edit ${dev.name}`,
             //     btnTitle: `Return to ${dev.name}`,
             //     navLinks,
             //     path,
             //     category: dev,
-            //     errors: [{
-            //         msg: 'Invalid developer ID.'
-            //     }],
+            //     errors: null
             // });
-            throw new Error(`Error occured while fetching the developer.`, err);
+            res.status(200).send({
+                success: true,
+                data: {
+                    path,
+                    dev
+                }
+            });
+        } else {
+            console.log('id is not valid');
+            res.status(500).send({
+                err: err ? err : 'Error occured while retrieving the dev due to invalid ID provided.'
+            });
         };
     } catch (err) {
-        throw new Error(`Error occured while fetching specific developer info.`, err);
+        console.log('smt else');
+        res.status(500).send({
+            err: err ? err : 'Error occured while fetching the dev.'
+        });
     };
 };
 
@@ -252,15 +272,20 @@ const postUpdateDeveloper = [
             const dev = await devDb.findOne({ _id: new ObjectId(req.params.id) });
             if (req.err) {
                 console.log(req.err);
-                return res.status(400).render('editGenreAndDev', {
-                    title: `Edit ${dev.name}`,
-                    btnTitle: `Return to ${dev.name}`,
-                    navLinks,
-                    path,
-                    category: dev,
-                    errors: [{
-                        msg: req.err
-                    }]
+                // return res.status(400).render('editGenreAndDev', {
+                //     title: `Edit ${dev.name}`,
+                //     btnTitle: `Return to ${dev.name}`,
+                //     navLinks,
+                //     path,
+                //     category: dev,
+                //     errors: [{
+                //         msg: req.err
+                //     }]
+                // });
+                res.status(400).send({
+                    errTpe: 'Multer',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
 
@@ -268,13 +293,18 @@ const postUpdateDeveloper = [
             if (!errors.isEmpty()) {
                 console.log(errors.array());
 
-                return res.status(400).render('editGenreAndDev', {
-                    title: `Edit ${dev.name}`,
-                    btnTitle: `Return to ${dev.name}`,
-                    navLinks,
-                    path,
-                    category: dev,
-                    errors: errors.array(),
+                // return res.status(400).render('editGenreAndDev', {
+                //     title: `Edit ${dev.name}`,
+                //     btnTitle: `Return to ${dev.name}`,
+                //     navLinks,
+                //     path,
+                //     category: dev,
+                //     errors: errors.array(),
+                // });
+                res.status(400).send({
+                    errTpe: 'Validation',
+                    errBody: errors.array(),
+                    errCode: 400
                 });
             };
 
@@ -331,13 +361,26 @@ const postUpdateDeveloper = [
                     const query = { _id: new ObjectId(req.params.id) };
                     await devDb.updateOne(query, updateDoc);
                 };
-                res.redirect(`/${path}/${req.params.id}`);
+                // res.redirect(`/${path}/${req.params.id}`);
+                res.status(200).send({
+                    success: true,
+                });
             } catch (err) {
-                throw new Error(`Error occured while uploading developer data`, err);
+                // throw new Error(`Error occured while uploading developer data`, err);
+                res.status(500).send({
+                    errType: "Other",
+                    errBody: 'Error occured while uploading update',
+                    errCode: 500
+                });
             };
         } else {
             // throw new Error(`Invalid developer id`, err);
-            res.redirect(`/games/${req.params.id}`);
+            // res.redirect(`/games/${req.params.id}`);
+            res.status(500).send({
+                errType: "ID",
+                errBody: 'Error occured due to invalid id.',
+                errCode: 500
+            });
         };
     }
 ];
@@ -374,17 +417,25 @@ const getDeleteDeveloper = async (req, res) => {
                 const deleteResult = await devDb.deleteOne({ _id: new ObjectId(req.params.id) });
 
                 console.log('mongodb dev dlt: ', deleteResult);
-                res.redirect('/developers');
+                res.status(200).send({
+                    success: true,
+                });
             } else {
                 console.error('Error: ', warning);
-                res.redirect(`/${path}/${req.params.id}`);
+                // res.redirect(`/${path}/${req.params.id}`);
+                res.status(500).send({
+                    err: warning
+                });
             };
         } else {
-            // devs route that doesnt exist here
-            throw new Error(`Incorrect dev id.`, err);
+            res.status(500).send({
+                err: err ? err : 'Error occured while deleting the developer due to invalid ID provided.'
+            });
         };
     } catch (err) {
-        throw new Error(`Error occured while deleting the developer.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while deleting the developer.'
+        });
     };
 };
 
@@ -392,7 +443,7 @@ module.exports = {
     getAllDevelopers,
     getSpecificDeveloper,
 
-    getCreateDeveloper,
+    // getCreateDeveloper,
     postCreateDeveloper,
 
     getUpdateDeveloper,

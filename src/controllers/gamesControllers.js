@@ -128,137 +128,6 @@ const getProducts = async (req, res) => {
     };
 };
 
-// CREATE NEW GAME
-const getNewProduct = async (req, res) => {
-    try {
-        const projectFields = { _id: 1, name: 1 };
-        const db = getDb();
-        const genreArr = await db.collection(genresPath).find().project(projectFields).toArray();
-        const devArr = await db.collection(devPath).find().project(projectFields).toArray();
-
-        res.render('createProduct', {
-            title: 'Add a new game',
-            btnTitle: 'Go Back',
-            navLinks,
-            genresListArray: genreArr,
-            devsListArray: devArr,
-            errors: null,
-        });
-    } catch (err) {
-        throw new Error(`Error occured while fetching creating product template.`, err);
-    };
-};
-
-const postNewProduct = [
-    validateProduct,
-    async (req, res) => {
-        try {
-            console.log('POSTING NEW PRODUCT');
-            const db = getDb();
-            const genreDb = await db.collection(genresPath);
-            const devDb = await db.collection(devPath);
-            const gamesDb = await db.collection(path);
-            const genreArr = await genreDb.find().project({ name: 1 }).toArray();
-            const devArr = await devDb.find().project({ name: 1 }).toArray();
-
-            if (req.err) {
-                console.error('other error: ', req.err);
-                return res.status(400).render('createProduct', {
-                    title: 'Add a new game',
-                    btnTitle: 'Go Back',
-                    navLinks,
-                    genresListArray: genreArr,
-                    devsListArray: devArr,
-                    errors: [{
-                        msg: req.err
-                    }]
-                });
-            };
-
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                // console.error('validator error: ', errors.array());
-                return res.status(400).render('createProduct', {
-                    title: 'Add a new game',
-                    btnTitle: 'Go Back',
-                    navLinks,
-                    genresListArray: genreArr,
-                    devsListArray: devArr,
-                    errors: errors.array(),
-                });
-            };
-
-            const inputData = matchedData(req);
-            console.log('inputData: ', inputData);
-            const checkIfGameAlreadyExists = await gamesDb.find({ name: inputData.name }).project({ name: 1 }).toArray();
-            console.log('checkIfGameAlreadyExists:', checkIfGameAlreadyExists);
-            if (checkIfGameAlreadyExists.length > 0) {
-                return res.status(400).render('createProduct', {
-                    title: 'Add a new game',
-                    btnTitle: 'Go Back',
-                    navLinks,
-                    genresListArray: genreArr,
-                    devsListArray: devArr,
-                    errors: [{
-                        msg: 'A game with the same name already exists.'
-                    }]
-                });
-            } else {
-                console.log('everything oke');
-                const file = req.file;
-                const newName = generateName(file.originalname);
-                const fileBase64 = decode(file.buffer.toString('base64'));
-                const { data, error } = await supabase.storage
-                .from('games-user-photos')
-                .upload(newName, fileBase64, {
-                    contentType: file.mimetype,
-                    cacheControl: '1',
-                    upsert: false
-                });
-                // console.log('data from supabase:');
-                // console.log(data);
-                if (error != null) throw error;
-
-                const { data: obj } = supabase.storage
-                .from('games-user-photos')
-                .getPublicUrl(data.path);
-
-                // console.log('link from supabase:');
-                // console.log(obj);
-
-                const newGame = {
-                    name: inputData.name,
-                    url: `url(${obj.publicUrl})`,
-                    imgName: data.path,
-                    genres: (typeof inputData.genre === 'string') ? [inputData.genre] : inputData.genre, 
-                    developers: (typeof inputData.dev === 'string') ? [inputData.dev] : inputData.dev,
-                    price: parseInt(inputData.price),
-                    description: inputData.description,
-                    rating: parseInt(inputData.rating),
-                    isDefault: false
-                };
-
-                await gamesDb.insertOne(newGame);
-                const newDev = await gamesDb.findOne({ name: inputData.name });
-                console.log('newDev:');
-                console.log(newDev);
-                // console.log(newDev.genres);
-                // console.log(newDev.developers);
-
-                // inputData.genre, inputData.dev
-                await updateMultiple(newDev.genres, genreDb);
-                await updateMultiple(newDev.developers, devDb);
-
-                // console.log(newDev._id);
-                res.redirect(`/games/${newDev._id}`);
-                // res.redirect('/games');
-            };
-        } catch (err) {
-            throw new Error(`Error occured while creating the game.`, err);
-        };
-    }
-];
-
 // RENDER INDIVIDUAL PRODUCT PAGE
 const getIndividualProduct = async (req, res) => {
     console.log('required id: ' + req.params.id);
@@ -288,13 +157,185 @@ const getIndividualProduct = async (req, res) => {
             console.error('error retrieving the game');
             // res.redirect('/games');
             res.status(500).send({
-                err: err ? err : 'Error occured while retrieving the game.'
+                err: err ? err : 'Error occured while retrieving the game due to invalid ID provided.'
             });
         };
     } catch (err) {
-        throw new Error(`Error occured while retrieving the game.`, err);
+        // throw new Error(`Error occured while retrieving the game.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while retrieving the game.'
+        });
     };
 };
+
+// CREATE NEW GAME
+const getNewProduct = async (req, res) => {
+    try {
+        const projectFields = { _id: 1, name: 1 };
+        const db = getDb();
+        const genreArr = await db.collection(genresPath).find().project(projectFields).toArray();
+        const devArr = await db.collection(devPath).find().project(projectFields).toArray();
+
+        // res.render('createProduct', {
+        //     title: 'Add a new game',
+        //     btnTitle: 'Go Back',
+        //     navLinks,
+        //     genresListArray: genreArr,
+        //     devsListArray: devArr,
+        //     errors: null,
+        // });
+
+        res.status(200).send({
+            success: true,
+            data: {
+                title: 'Add a new game',
+                genreArr,
+                devArr,
+            }
+        });
+    } catch (err) {
+        // throw new Error(`Error occured while fetching creating product template.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while fetching add game template.'
+        });
+    };
+};
+
+const postNewProduct = [
+    validateProduct,
+    async (req, res) => {
+        try {
+            console.log('POSTING NEW PRODUCT');
+            const db = getDb();
+            const genreDb = await db.collection(genresPath);
+            const devDb = await db.collection(devPath);
+            const gamesDb = await db.collection(path);
+            const genreArr = await genreDb.find().project({ name: 1 }).toArray();
+            const devArr = await devDb.find().project({ name: 1 }).toArray();
+
+            if (req.err) {
+                console.error('other error: ', req.err);
+                // return res.status(400).render('createProduct', {
+                //     title: 'Add a new game',
+                //     btnTitle: 'Go Back',
+                //     navLinks,
+                //     genresListArray: genreArr,
+                //     devsListArray: devArr,
+                //     errors: [{
+                //         msg: req.err
+                //     }]
+                // });
+                res.status(400).send({
+                    errTpe: 'Multer',
+                    errBody: errors.array(),
+                    errCode: 400
+                });
+            };
+
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                // console.error('validator error: ', errors.array());
+                // return res.status(400).render('createProduct', {
+                //     title: 'Add a new game',
+                //     btnTitle: 'Go Back',
+                //     navLinks,
+                //     genresListArray: genreArr,
+                //     devsListArray: devArr,
+                //     errors: errors.array(),
+                // });
+                res.status(400).send({
+                    errTpe: 'Validation',
+                    errBody: errors.array(),
+                    errCode: 400
+                });
+            };
+
+            const inputData = matchedData(req);
+            console.log('inputData: ', inputData);
+            const checkIfGameAlreadyExists = await gamesDb.find({ name: inputData.name }).project({ name: 1 }).toArray();
+            console.log('checkIfGameAlreadyExists:', checkIfGameAlreadyExists);
+            if (checkIfGameAlreadyExists.length > 0) {
+                // return res.status(400).render('createProduct', {
+                //     title: 'Add a new game',
+                //     btnTitle: 'Go Back',
+                //     navLinks,
+                //     genresListArray: genreArr,
+                //     devsListArray: devArr,
+                //     errors: [{
+                //         msg: 'A game with the same name already exists.'
+                //     }]
+                // });
+                res.status(404).send({
+                    errType: "Already exists",
+                    errBody: 'A game with the same name already exists.',
+                    errCode: 404
+                });
+            } else {
+                console.log('everything oke');
+                const file = req.file;
+                const newName = generateName(file.originalname);
+                const fileBase64 = decode(file.buffer.toString('base64'));
+                const { data, error } = await supabase.storage
+                .from('games-user-photos')
+                .upload(newName, fileBase64, {
+                    contentType: file.mimetype,
+                    cacheControl: '1',
+                    upsert: false
+                });
+                // console.log('data from supabase:');
+                // console.log(data);
+                if (error != null) throw error;
+
+                const { data: obj } = supabase.storage
+                .from('games-user-photos')
+                .getPublicUrl(data.path);
+
+                // console.log('link from supabase:');
+                // console.log(obj);
+
+                const newObj = {
+                    name: inputData.name,
+                    url: `url(${obj.publicUrl})`,
+                    imgName: data.path,
+                    genres: (typeof inputData.genre === 'string') ? [inputData.genre] : inputData.genre, 
+                    developers: (typeof inputData.dev === 'string') ? [inputData.dev] : inputData.dev,
+                    price: parseInt(inputData.price),
+                    description: inputData.description,
+                    rating: parseInt(inputData.rating),
+                    isDefault: false
+                };
+
+                await gamesDb.insertOne(newObj);
+                const newGame = await gamesDb.findOne({ name: inputData.name });
+                console.log('newGame:');
+                console.log(newGame);
+                // console.log(newGame.genres);
+                // console.log(newGame.developers);
+
+                // inputData.genre, inputData.dev
+                await updateMultiple(newGame.genres, genreDb);
+                await updateMultiple(newGame.developers, devDb);
+
+                // console.log(newGame._id);
+                // res.redirect(`/games/${newGame._id}`);
+                res.status(200).send({
+                    success: true,
+                    data: {
+                        gameID: newGame._id
+                    }
+                });
+                // res.redirect('/games');
+            };
+        } catch (err) {
+            // throw new Error(`Error occured while creating the game.`, err);
+            res.status(500).send({
+                errType: "Other",
+                errBody: 'Error occured while creating a new game.',
+                errCode: 500
+            });
+        };
+    }
+];
 
 // UPDATE
 const getUpdateProduct = async (req, res) => {
@@ -342,133 +383,137 @@ const getUpdateProduct = async (req, res) => {
     };
 };
 
-//validateProduct
-const postUpdateProduct = async (req, res) => {
-    console.log('POST GAME UPDATE');
-    console.log(req.file);
-    console.log(req.body);
-    // console.log(req);
-    res.status(200).send({
-        success: true,
-    });
-    // const db = getDb();
-    // const genreDb = await db.collection(genresPath);
-    // const genreArr = await genreDb.find().project({ name: 1 }).toArray();
-    // const devDb = await db.collection(devPath);
-    // const devArr = await devDb.find().project({ name: 1 }).toArray();
-    // const gamesDb = await db.collection(path);
+const postUpdateProduct = [
+    validateProduct,
+    async (req, res) => {
+        console.log('POST GAME UPDATE');
+        const db = getDb();
+        const genreDb = await db.collection(genresPath);
+        const genreArr = await genreDb.find().project({ name: 1 }).toArray();
+        const devDb = await db.collection(devPath);
+        const devArr = await devDb.find().project({ name: 1 }).toArray();
+        const gamesDb = await db.collection(path);
 
-    // if (ObjectId.isValid(req.params.id)) {
-    //     const originalGame = await gamesDb.findOne({ _id: new ObjectId(req.params.id) });
+        if (ObjectId.isValid(req.params.id)) {
+            const originalGame = await gamesDb.findOne({ _id: new ObjectId(req.params.id) });
 
-    //     if (req.err) {
-    //         console.error('other error: ', req.err);
-    //         // return res.status(400).render('editProduct', {
-    //         //     title: `Edit ${originalGame.name}`,
-    //         //     btnTitle: `Return to ${originalGame.name}`,
-    //         //     navLinks,
-    //         //     product: originalGame,
-    //         //     genresListArray: genreArr,
-    //         //     devsListArray: devArr,
-    //         //     errors: errors.array(),
-    //         // });
-    //         res.status(400).send({
-    //             errTpe: 'Multer',
-    //             errBody: errors.array(),
-    //             errCode: 400
-    //         });
-    //     };
+            if (req.err) {
+                console.error('other error: ', req.err);
+                // return res.status(400).render('editProduct', {
+                //     title: `Edit ${originalGame.name}`,
+                //     btnTitle: `Return to ${originalGame.name}`,
+                //     navLinks,
+                //     product: originalGame,
+                //     genresListArray: genreArr,
+                //     devsListArray: devArr,
+                //     errors: errors.array(),
+                // });
+                res.status(400).send({
+                    errTpe: 'Multer',
+                    errBody: errors.array(),
+                    errCode: 400
+                });
+            };
 
-    //     const errors = validationResult(req);
-    //     if (!errors.isEmpty()) {
-    //         console.log('validation errors:', errors.isEmpty());
-    //         // return res.status(400).render('editProduct', {
-    //         //     title: `Edit ${originalGame.name}`,
-    //         //     btnTitle: `Return to ${originalGame.name}`,
-    //         //     navLinks,
-    //         //     product: originalGame,
-    //         //     genresListArray: genreArr,
-    //         //     devsListArray: devArr,
-    //         //     errors: errors.array(),
-    //         // });
-    //         res.status(400).send({
-    //             errTpe: 'Validation',
-    //             errBody: errors.array(),
-    //             errCode: 400
-    //         });
-    //     };
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                console.log('validation errors:', errors.isEmpty());
+                // return res.status(400).render('editProduct', {
+                //     title: `Edit ${originalGame.name}`,
+                //     btnTitle: `Return to ${originalGame.name}`,
+                //     navLinks,
+                //     product: originalGame,
+                //     genresListArray: genreArr,
+                //     devsListArray: devArr,
+                //     errors: errors.array(),
+                // });
+                res.status(400).send({
+                    errTpe: 'Validation',
+                    errBody: errors.array(),
+                    errCode: 400
+                });
+            };
 
-    //     // console.log('originalGame: ', originalGame);
-    //     const updatedData = matchedData(req);
-    //     console.log('updatedData: ', updatedData);
-    //     let updateDoc;
-    //     console.log('req.file: ', req.file);
-    //     if (req.file) {
-    //         console.log('updating with file');
-    //         const file = req.file;
-    //         const fileBase64 = decode(file.buffer.toString('base64'));
-    //         const { data, error } = await supabase.storage
-    //         .from('games-user-photos')
-    //         .update(originalGame.imgName, fileBase64, {
-    //             contentType: file.mimetype,
-    //             cacheControl: '1',
-    //             upsert: false
-    //         });
-    //         console.log('data from supabase:');
-    //         console.log(data);
-    //         if (error != null) throw error;
+            try {
+                // console.log('originalGame: ', originalGame);
+                const updatedData = matchedData(req);
+                console.log('updatedData: ', updatedData);
+                let updateDoc;
+                console.log('req.file: ', req.file);
+                if (req.file) {
+                    // console.log('updating with file');
+                    const file = req.file;
+                    const fileBase64 = decode(file.buffer.toString('base64'));
+                    const { data, error } = await supabase.storage
+                    .from('games-user-photos')
+                    .update(originalGame.imgName, fileBase64, {
+                        contentType: file.mimetype,
+                        cacheControl: '1',
+                        upsert: false
+                    });
+                    // console.log('data from supabase:');
+                    // console.log(data);
+                    if (error != null) throw error;
 
-    //         const { data: obj } = supabase.storage
-    //         .from('games-user-photos')
-    //         .getPublicUrl(data.path);
+                    const { data: obj } = supabase.storage
+                    .from('games-user-photos')
+                    .getPublicUrl(data.path);
 
-    //         console.log('link from supabase:');
-    //         console.log(obj);
+                    // console.log('link from supabase:');
+                    // console.log(obj);
 
-    //         updateDoc = {
-    //             $set: {
-    //                 name: updatedData.name ? updatedData.name : originalGame.name,
-    //                 url: `url(${obj.publicUrl})`,
-    //                 imgName: data.path,
-    //                 price: updatedData.price ? parseInt(updatedData.price) : originalGame.price,
-    //                 rating: updatedData.rating ? parseInt(updatedData.rating) : originalGame.rating,
-    //                 description: updatedData.description ? updatedData.description : originalGame.description,
-    //                 genres: updatedData.genre ? (typeof updatedData.genre === 'string') ? [updatedData.genre] : updatedData.genre : [...originalGame.genres],
-    //                 developers: updatedData.dev ? (typeof updatedData.dev === 'string') ? [updatedData.dev] : updatedData.dev : [...originalGame.developers],
-    //             }
-    //         };
-    //     } else {
-    //         console.log('updating without file');
-    //         updateDoc = {
-    //             $set: {
-    //                 name: updatedData.name ? updatedData.name : originalGame.name,
-    //                 price: updatedData.price ? parseInt(updatedData.price) : originalGame.price,
-    //                 rating: updatedData.rating ? parseInt(updatedData.rating) : originalGame.rating,
-    //                 description: updatedData.description ? updatedData.description : originalGame.description,
-    //                 genres: updatedData.genre ? (typeof updatedData.genre === 'string') ? [updatedData.genre] : updatedData.genre : [...originalGame.genres],
-    //                 developers: updatedData.dev ? (typeof updatedData.dev === 'string') ? [updatedData.dev] : updatedData.dev : [...originalGame.developers],
-    //             }
-    //         };
-    //     };
-    //     const query = { _id: new ObjectId(req.params.id) };
-    //     const results = await gamesDb.updateOne(query, updateDoc);
-    //     await updateMultiple(updatedData.genre, genreDb, originalGame.genres);
-    //     await updateMultiple(updatedData.dev, devDb, originalGame.developers);
-    //     console.log('results: ', results);
-    //     // res.redirect(`/games/${req.params.id}`);
-    //     res.status(200).send({
-    //         success: true,
-    //     });
-    // } else {
-    //     // res.redirect(`/games/${req.params.id}`);
-    //     res.status(500).send({
-    //         errType: "ID",
-    //         errBody: 'Error occured due to invalid id.',
-    //         errCode: 500
-    //     });
-    // };
-}
-// ];
+                    updateDoc = {
+                        $set: {
+                            name: updatedData.name ? updatedData.name : originalGame.name,
+                            url: `url(${obj.publicUrl})`,
+                            imgName: data.path,
+                            price: updatedData.price ? parseInt(updatedData.price) : originalGame.price,
+                            rating: updatedData.rating ? parseInt(updatedData.rating) : originalGame.rating,
+                            description: updatedData.description ? updatedData.description : originalGame.description,
+                            genres: updatedData.genre ? (typeof updatedData.genre === 'string') ? [updatedData.genre] : updatedData.genre : [...originalGame.genres],
+                            developers: updatedData.dev ? (typeof updatedData.dev === 'string') ? [updatedData.dev] : updatedData.dev : [...originalGame.developers],
+                        }
+                    };
+                } else {
+                    // console.log('updating without file');
+                    updateDoc = {
+                        $set: {
+                            name: updatedData.name ? updatedData.name : originalGame.name,
+                            price: updatedData.price ? parseInt(updatedData.price) : originalGame.price,
+                            rating: updatedData.rating ? parseInt(updatedData.rating) : originalGame.rating,
+                            description: updatedData.description ? updatedData.description : originalGame.description,
+                            genres: updatedData.genre ? (typeof updatedData.genre === 'string') ? [updatedData.genre] : updatedData.genre : [...originalGame.genres],
+                            developers: updatedData.dev ? (typeof updatedData.dev === 'string') ? [updatedData.dev] : updatedData.dev : [...originalGame.developers],
+                        }
+                    };
+                };
+                const query = { _id: new ObjectId(req.params.id) };
+                const results = await gamesDb.updateOne(query, updateDoc);
+                await updateMultiple(updatedData.genre, genreDb, originalGame.genres);
+                await updateMultiple(updatedData.dev, devDb, originalGame.developers);
+                console.log('results: ', results);
+                // res.redirect(`/games/${req.params.id}`);
+                res.status(200).send({
+                    success: true,
+                });
+            } catch (err) {
+                // throw new Error(`Error occured while uploading genre data`, err);
+                res.status(500).send({
+                    errType: "Other",
+                    errBody: 'Error occured while uploading update',
+                    errCode: 500
+                });
+            };
+        } else {
+            // res.redirect(`/games/${req.params.id}`);
+            res.status(500).send({
+                errType: "ID",
+                errBody: 'Error occured due to invalid id.',
+                errCode: 500
+            });
+        };
+    }
+];
 
 const getDeleteProduct = async (req, res) => {
     try {
@@ -497,13 +542,21 @@ const getDeleteProduct = async (req, res) => {
             const deleteResult = await gamesDb.deleteOne({ _id: new ObjectId(req.params.id) });
 
             console.log('mongodb dev dlt: ', deleteResult);
-            res.redirect('/games');
+            // res.redirect('/games');
+            res.status(200).send({
+                success: true,
+            });
         } else {
             // games route that doesnt exist here
-            throw new Error(`Error occured while deleting dev.`, err);
+            // throw new Error(`Error occured while deleting dev.`, err);
+            res.status(500).send({
+                err: err ? err : 'Error occured while deleting the game due to invalid ID provided.'
+            });
         };
     } catch (err) {
-        throw new Error(`Error occured while deleting the developer.`, err);
+        res.status(500).send({
+            err: err ? err : 'Error occured while deleting the game.'
+        });
     };
 };
 
