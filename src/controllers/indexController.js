@@ -21,21 +21,18 @@ const validateSearchProduct = [
 
 const getHomepage = async (req, res) => {
     try {
-        // res.render('index', {
-        //     title: 'Game Shop',
-        //     navLinks,
-        //     errors: null
-        // });
-
         res.status(200).send({
             success: true,
             data: navLinks
         });
     } catch(err) {
         res.status(500).send({
-            err: err ? err : 'Error occured while loading homepage.'
+            errType: 'Other',
+            errBody: [{
+                msg: err || 'Error occured while loading the homepage.'
+            }],
+            errCode: 500
         });
-        // throw new Error(`Error occured while loading homepage.`, err);
     };
 };
 
@@ -44,32 +41,40 @@ const getSearchedProduct =  [
     async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            console.log('errors:');
-            console.log(errors.array());
-            console.log(req.body);
-            return res.status(400).render('index', {
-                title: 'Game Shop',
-                navLinks,
-                errors: errors.array()
+            res.status(400).send({
+                errType: 'Invalid Input',
+                errBody: errors.array(),
+                errCode: 400
             });
         };
 
         try {
-            const { searchString } = matchedData(req);
-            const projectFields = { description: 0, isDefault: 0 };
-            const db = getDb();
-            const gamesDb = db.collection(gamesPath);
-            await gamesDb.createIndex({ name: "text" });
-            const query = { $text: { $search: searchString } };
-            const productsArr = await gamesDb.find(query).project(projectFields).toArray();
-            res.render('search', {
-                title: `Search results for ${searchString}`,
-                btnTitle: 'Go back to Products',
-                navLinks,
-                productsArr
+            // const { searchString } = matchedData(req);
+            // const projectFields = { description: 0, isDefault: 0 };
+            // const db = getDb();
+            // const gamesDb = db.collection(gamesPath);
+            // await gamesDb.createIndex({ name: "text" });
+            // const query = { $text: { $search: searchString } };
+            // const productsArr = await gamesDb.find(query).project(projectFields).toArray();
+            // res.status(200).send({
+            //     success: true,
+            //     data: { productsArr }
+            // });
+            res.status(500).send({
+                errType: 'Other',
+                errBody: [{
+                    msg: err || 'Error occured while searching for the game.'
+                }],
+                errCode: 500
             });
         } catch (err) {
-            throw new Error(`error when getting search results.`, err);
+            res.status(500).send({
+                errType: 'Other',
+                errBody: [{
+                    msg: err || 'Error occured while searching for the game.'
+                }],
+                errCode: 500
+            });
         };
     }
 ];
