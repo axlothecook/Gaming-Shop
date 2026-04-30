@@ -49,23 +49,16 @@ const getSearchedProduct =  [
         };
 
         try {
-            // const { searchString } = matchedData(req);
-            // const projectFields = { description: 0, isDefault: 0 };
-            // const db = getDb();
-            // const gamesDb = db.collection(gamesPath);
-            // await gamesDb.createIndex({ name: "text" });
-            // const query = { $text: { $search: searchString } };
-            // const productsArr = await gamesDb.find(query).project(projectFields).toArray();
-            // res.status(200).send({
-            //     success: true,
-            //     data: { productsArr }
-            // });
-            res.status(500).send({
-                errType: 'Other',
-                errBody: [{
-                    msg: err || 'Error occured while searching for the game.'
-                }],
-                errCode: 500
+            const { searchString } = matchedData(req);
+            const projectFields = { description: 0, isDefault: 0 };
+            const db = getDb();
+            const gamesDb = db.collection(gamesPath);
+            await gamesDb.createIndex({ name: "text" });
+            const query = { $text: { $search: searchString } };
+            const productsArr = await gamesDb.find(query).project(projectFields).toArray();
+            res.status(200).send({
+                success: true,
+                data: { productsArr }
             });
         } catch (err) {
             res.status(500).send({

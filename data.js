@@ -7,7 +7,9 @@ const navLinks = [
     { 
         id: 0,
         href: '/',
-        text: 'Home'
+        text: 'Home',
+        imgPath: null,
+        txtClr: null
     },
     {
         id: 1,
@@ -29,6 +31,21 @@ const navLinks = [
         text: 'Developers',
         imgPath: 'url(https://qyuaermixhugwrlhhvkr.supabase.co/storage/v1/object/public/basic-page-files/bg2.jpg)',
         txtClr: '#fff'
+    }
+];
+
+const sortInputArr = [
+    {
+        id: 'ascending',
+        name: "sort",
+        value: 1,
+        text: "Ascending"
+    },
+    {
+        id: 'decending',
+        name: "sort",
+        value: -1,
+        text: "Descending"
     }
 ];
 
@@ -719,6 +736,7 @@ const gamesArr = [
 
 module.exports = {
     alphabetArray,
+    sortInputArr,
     priceArray,
     ratingArray,
     navLinks,

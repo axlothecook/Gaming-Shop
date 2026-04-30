@@ -11,6 +11,7 @@ const {
 } = require('express-validator');
 const {
     alphabetArray,
+    sortInputArr,
     priceArray,
     ratingArray,
     navLinks,
@@ -96,6 +97,7 @@ const getProducts = async (req, res) => {
                 genresArr: genreArr,
                 devsArr: devArr,
                 alphabetArray,
+                sortInputArr,
                 priceArray,
                 ratingArray,
                 pagesCount
