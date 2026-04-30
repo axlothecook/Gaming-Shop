@@ -28,10 +28,6 @@ const path = parsed.GAMES_PATH;
 const devPath = parsed.DEV_PATH;
 const genresPath = parsed.GENRE_PATH;
 
-// const path = process.env.GAMES_PATH;
-// const devPath = process.env.DEV_PATH;
-// const genresPath = process.env.GENRE_PATH;
-
 const validateProduct = [
     body('name').trim()
     .isLength({ min: 2, max: 70 }).withMessage(`Title ${lengthErr} 2 and 70 characters`)
@@ -102,68 +98,49 @@ const getProducts = async (req, res) => {
                 alphabetArray,
                 priceArray,
                 ratingArray,
-                pagesCount,
-                errors: null
+                pagesCount
             }
         });
-
-        // res.render('products', {
-        //     title: 'Games',
-        //     btnText: 'game',
-        //     navLinks,
-        //     productsArr,
-        //     genresListArray: genreArr,
-        //     devsListArray: devArr,
-        //     alphabetArray,
-        //     priceArray,
-        //     ratingArray,
-        //     pagesCount,
-        //     errors: null
-        // });
     } catch (err) {
         res.status(500).send({
-            err: err ? err : 'Error occured while fetching all products.'
+            errType: 'Other',
+            errBody: [{
+                msg: err || 'Error occured while fetching all products.'
+            }],
+            errCode: 500
         });
-        // throw new Error(`Error occured while fetching products.`, err);
     };
 };
 
 // RENDER INDIVIDUAL PRODUCT PAGE
 const getIndividualProduct = async (req, res) => {
-    console.log('required id: ' + req.params.id);
     try {
         if (ObjectId.isValid(req.params.id)) {
             const db = getDb();
             const gameDb = db.collection(path);
             const product = await gameDb.findOne({ _id: new ObjectId(req.params.id) });
-            console.log('game found: ', product.name);
-            
-            // res.render('partials/individualProduct', {
-            //     title: product.name,
-            //     btnTitle: 'Go Back',
-            //     navLinks,
-            //     product,
-            //     errors: null,
-            // });
 
             res.status(200).send({
                 success: true,
-                data: {
-                    product,
-                    errors: null,
-                }
+                data: { product }
             });
+
         } else {
-            console.error('error retrieving the game');
-            // res.redirect('/games');
-            res.status(500).send({
-                err: err ? err : 'Error occured while retrieving the game due to invalid ID provided.'
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: [{
+                    msg: 'Error occured while retrieving game data due to invalid ID provided.'
+                }],
+                errCode: 400
             });
         };
     } catch (err) {
-        // throw new Error(`Error occured while retrieving the game.`, err);
         res.status(500).send({
-            err: err ? err : 'Error occured while retrieving the game.'
+            errType: 'Other',
+            errBody: [{
+                msg: err || 'Error occured while retrieving the game.'
+            }],
+            errCode: 500
         });
     };
 };
@@ -175,16 +152,6 @@ const getNewProduct = async (req, res) => {
         const db = getDb();
         const genreArr = await db.collection(genresPath).find().project(projectFields).toArray();
         const devArr = await db.collection(devPath).find().project(projectFields).toArray();
-
-        // res.render('createProduct', {
-        //     title: 'Add a new game',
-        //     btnTitle: 'Go Back',
-        //     navLinks,
-        //     genresListArray: genreArr,
-        //     devsListArray: devArr,
-        //     errors: null,
-        // });
-
         res.status(200).send({
             success: true,
             data: {
@@ -194,9 +161,12 @@ const getNewProduct = async (req, res) => {
             }
         });
     } catch (err) {
-        // throw new Error(`Error occured while fetching creating product template.`, err);
         res.status(500).send({
-            err: err ? err : 'Error occured while fetching add game template.'
+            errType: 'Other',
+            errBody: [{
+                msg: err || 'Error occured while fetching add game template.'
+            }],
+            errCode: 500
         });
     };
 };
@@ -205,7 +175,6 @@ const postNewProduct = [
     validateProduct,
     async (req, res) => {
         try {
-            console.log('POSTING NEW PRODUCT');
             const db = getDb();
             const genreDb = await db.collection(genresPath);
             const devDb = await db.collection(devPath);
@@ -214,64 +183,35 @@ const postNewProduct = [
             const devArr = await devDb.find().project({ name: 1 }).toArray();
 
             if (req.err) {
-                console.error('other error: ', req.err);
-                // return res.status(400).render('createProduct', {
-                //     title: 'Add a new game',
-                //     btnTitle: 'Go Back',
-                //     navLinks,
-                //     genresListArray: genreArr,
-                //     devsListArray: devArr,
-                //     errors: [{
-                //         msg: req.err
-                //     }]
-                // });
                 res.status(400).send({
-                    errTpe: 'Multer',
-                    errBody: errors.array(),
+                    errType: 'Failed File Upload',
+                    errBody: [{
+                        msg: req.err
+                    }],
                     errCode: 400
                 });
             };
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                // console.error('validator error: ', errors.array());
-                // return res.status(400).render('createProduct', {
-                //     title: 'Add a new game',
-                //     btnTitle: 'Go Back',
-                //     navLinks,
-                //     genresListArray: genreArr,
-                //     devsListArray: devArr,
-                //     errors: errors.array(),
-                // });
                 res.status(400).send({
-                    errTpe: 'Validation',
+                    errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
                 });
             };
 
             const inputData = matchedData(req);
-            console.log('inputData: ', inputData);
             const checkIfGameAlreadyExists = await gamesDb.find({ name: inputData.name }).project({ name: 1 }).toArray();
-            console.log('checkIfGameAlreadyExists:', checkIfGameAlreadyExists);
             if (checkIfGameAlreadyExists.length > 0) {
-                // return res.status(400).render('createProduct', {
-                //     title: 'Add a new game',
-                //     btnTitle: 'Go Back',
-                //     navLinks,
-                //     genresListArray: genreArr,
-                //     devsListArray: devArr,
-                //     errors: [{
-                //         msg: 'A game with the same name already exists.'
-                //     }]
-                // });
-                res.status(404).send({
-                    errType: "Already exists",
-                    errBody: 'A game with the same name already exists.',
-                    errCode: 404
+                res.status(400).send({ 
+                    errType: 'Duplicate Item',
+		            errBody: [{
+                        msg: 'A game of the same name already exists.'
+                    }],
+                    errCode: 400
                 });
             } else {
-                console.log('everything oke');
                 const file = req.file;
                 const newName = generateName(file.originalname);
                 const fileBase64 = decode(file.buffer.toString('base64'));
@@ -282,16 +222,20 @@ const postNewProduct = [
                     cacheControl: '1',
                     upsert: false
                 });
-                // console.log('data from supabase:');
-                // console.log(data);
-                if (error != null) throw error;
+
+                if (error != null) {
+                    res.status(500).send({ 
+                        errType: 'Supabase Error',
+                        errBody: [{
+                            msg: error || 'Failed to upload the image file.'
+                        }],
+                        errCode: 500
+                    });
+                };
 
                 const { data: obj } = supabase.storage
                 .from('games-user-photos')
                 .getPublicUrl(data.path);
-
-                // console.log('link from supabase:');
-                // console.log(obj);
 
                 const newObj = {
                     name: inputData.name,
@@ -307,30 +251,21 @@ const postNewProduct = [
 
                 await gamesDb.insertOne(newObj);
                 const newGame = await gamesDb.findOne({ name: inputData.name });
-                console.log('newGame:');
-                console.log(newGame);
-                // console.log(newGame.genres);
-                // console.log(newGame.developers);
-
-                // inputData.genre, inputData.dev
                 await updateMultiple(newGame.genres, genreDb);
                 await updateMultiple(newGame.developers, devDb);
 
-                // console.log(newGame._id);
-                // res.redirect(`/games/${newGame._id}`);
                 res.status(200).send({
                     success: true,
-                    data: {
-                        gameID: newGame._id
-                    }
+                    data: { gameID: newGame._id }
                 });
-                // res.redirect('/games');
+
             };
         } catch (err) {
-            // throw new Error(`Error occured while creating the game.`, err);
             res.status(500).send({
-                errType: "Other",
-                errBody: 'Error occured while creating a new game.',
+                errType: 'Other',
+                errBody: [{
+                    msg: err || 'Error occured while creating a new game.'
+                }],
                 errCode: 500
             });
         };
@@ -340,53 +275,43 @@ const postNewProduct = [
 // UPDATE
 const getUpdateProduct = async (req, res) => {
     try {
-        console.log('GETTING GAME UPDATE: ', req.params.id);
         if (ObjectId.isValid(req.params.id)) {
             const db = getDb();
             const game = await db.collection(path).findOne({ _id: new ObjectId(req.params.id) });
             const devArr = await db.collection(devPath).find().project({ name: 1 }).toArray();
             const genreArr = await db.collection(genresPath).find().project({ name: 1 }).toArray();
-
-            // console.log('UPA:', devArr, genreArr);
-
-            // res.render('editProduct', {
-            //     title: `Edit ${game.name}`,
-            //     btnTitle: 'Return',
-            //     navLinks,
-            //     product: game,
-            //     genresListArray: genreArr,
-            //     devsListArray: devArr,
-            //     errors: null,
-            // });
             res.status(200).send({
                 success: true,
                 data: {
                     game: game,
                     genresArray: genreArr,
-                    devsArray: devArr,
-                    errors: null,
+                    devsArray: devArr
                 }
             });
 
         } else {
-            // games route that doesnt exist here
-            // throw new Error(`Error occured while fetching the gaming.`, err);
-            res.status(500).send({
-                err: err ? err : 'Error occured due to invalid id.'
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: [{
+                    msg: 'Error occured while retrieving game data due to invalid ID provided.'
+                }],
+                errCode: 400
             });
         };
     } catch (err) {
         res.status(500).send({
-            err: err ? err : 'Error occured while fetching product updating info.'
+            errType: 'Other',
+            errBody: [{
+                msg: err || 'Error occured while fetching game info.'
+            }],
+            errCode: 500
         });
-        // throw new Error(`Error occured while fetching specific gaming info.`, err);
     };
 };
 
 const postUpdateProduct = [
     validateProduct,
     async (req, res) => {
-        console.log('POST GAME UPDATE');
         const db = getDb();
         const genreDb = await db.collection(genresPath);
         const genreArr = await genreDb.find().project({ name: 1 }).toArray();
@@ -398,50 +323,39 @@ const postUpdateProduct = [
             const originalGame = await gamesDb.findOne({ _id: new ObjectId(req.params.id) });
 
             if (req.err) {
-                console.error('other error: ', req.err);
-                // return res.status(400).render('editProduct', {
-                //     title: `Edit ${originalGame.name}`,
-                //     btnTitle: `Return to ${originalGame.name}`,
-                //     navLinks,
-                //     product: originalGame,
-                //     genresListArray: genreArr,
-                //     devsListArray: devArr,
-                //     errors: errors.array(),
-                // });
                 res.status(400).send({
-                    errTpe: 'Multer',
-                    errBody: errors.array(),
+                    errType: 'Failed File Upload',
+                    errBody: [{
+                        msg: req.err
+                    }],
                     errCode: 400
                 });
             };
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                console.log('validation errors:', errors.isEmpty());
-                // return res.status(400).render('editProduct', {
-                //     title: `Edit ${originalGame.name}`,
-                //     btnTitle: `Return to ${originalGame.name}`,
-                //     navLinks,
-                //     product: originalGame,
-                //     genresListArray: genreArr,
-                //     devsListArray: devArr,
-                //     errors: errors.array(),
-                // });
                 res.status(400).send({
-                    errTpe: 'Validation',
+                    errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
                 });
             };
 
             try {
-                // console.log('originalGame: ', originalGame);
                 const updatedData = matchedData(req);
-                console.log('updatedData: ', updatedData);
+                const checkIfGameAlreadyExists = await gamesDb.find({ name: updatedData.name }).project({ name: 1 }).toArray();
+                if (checkIfGameAlreadyExists.length > 0) {
+                    res.status(400).send({ 
+                        errType: 'Duplicate Item',
+                        errBody: [{
+                            msg: 'A game of the same name already exists.'
+                        }],
+                        errCode: 400
+                    });
+                };
+
                 let updateDoc;
-                console.log('req.file: ', req.file);
                 if (req.file) {
-                    // console.log('updating with file');
                     const file = req.file;
                     const fileBase64 = decode(file.buffer.toString('base64'));
                     const { data, error } = await supabase.storage
@@ -451,16 +365,20 @@ const postUpdateProduct = [
                         cacheControl: '1',
                         upsert: false
                     });
-                    // console.log('data from supabase:');
-                    // console.log(data);
-                    if (error != null) throw error;
+
+                    if (error != null) {
+                        res.status(500).send({ 
+                            errType: 'Supabase Error',
+                            errBody: [{
+                                msg: error || 'Failed to upload the image file.'
+                            }],
+                            errCode: 500
+                        });
+                    };
 
                     const { data: obj } = supabase.storage
                     .from('games-user-photos')
                     .getPublicUrl(data.path);
-
-                    // console.log('link from supabase:');
-                    // console.log(obj);
 
                     updateDoc = {
                         $set: {
@@ -475,7 +393,6 @@ const postUpdateProduct = [
                         }
                     };
                 } else {
-                    // console.log('updating without file');
                     updateDoc = {
                         $set: {
                             name: updatedData.name ? updatedData.name : originalGame.name,
@@ -488,28 +405,27 @@ const postUpdateProduct = [
                     };
                 };
                 const query = { _id: new ObjectId(req.params.id) };
-                const results = await gamesDb.updateOne(query, updateDoc);
+                await gamesDb.updateOne(query, updateDoc);
                 await updateMultiple(updatedData.genre, genreDb, originalGame.genres);
                 await updateMultiple(updatedData.dev, devDb, originalGame.developers);
-                console.log('results: ', results);
-                // res.redirect(`/games/${req.params.id}`);
-                res.status(200).send({
-                    success: true,
-                });
+                res.status(200).send({ success: true });
             } catch (err) {
-                // throw new Error(`Error occured while uploading genre data`, err);
                 res.status(500).send({
-                    errType: "Other",
-                    errBody: 'Error occured while uploading update',
+                    errType: 'Other',
+                    errBody: [{
+                        msg: err || 'Error occured while updating the game info.'
+                    }],
                     errCode: 500
                 });
+
             };
         } else {
-            // res.redirect(`/games/${req.params.id}`);
-            res.status(500).send({
-                errType: "ID",
-                errBody: 'Error occured due to invalid id.',
-                errCode: 500
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: [{
+                    msg: 'Error occured while updating the game info due to invalid ID provided.'
+                }],
+                errCode: 400
             });
         };
     }
@@ -524,38 +440,42 @@ const getDeleteProduct = async (req, res) => {
             const gamesDb = db.collection(path);
             const game = await gamesDb.findOne({ _id: new ObjectId(req.params.id) });
 
-            // console.log('game: ', game);
-
             const { data, error } = await supabase
             .storage
             .from('games-user-photos')
             .remove([game.imgName])
 
-            console.log('game deletion img:', data);
-
-            if (error != null) throw error;
+            if (error != null) {
+                res.status(500).send({ 
+                    errType: 'Supabase Error',
+                    errBody: [{
+                        msg: error || 'Failed to delete the image file.'
+                    }],
+                    errCode: 500
+                });
+            };
 
             const updateDoc = { $inc: { numberOfGames: -1 } };
             game.genres.forEach(async item => await genreDb.updateOne({ name: item }, updateDoc));
             game.developers.forEach(async item => await devDb.updateOne({ name: item }, updateDoc));
-
-            const deleteResult = await gamesDb.deleteOne({ _id: new ObjectId(req.params.id) });
-
-            console.log('mongodb dev dlt: ', deleteResult);
-            // res.redirect('/games');
-            res.status(200).send({
-                success: true,
-            });
+            await gamesDb.deleteOne({ _id: new ObjectId(req.params.id) });
+            res.status(200).send({ success: true });
         } else {
-            // games route that doesnt exist here
-            // throw new Error(`Error occured while deleting dev.`, err);
-            res.status(500).send({
-                err: err ? err : 'Error occured while deleting the game due to invalid ID provided.'
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: [{
+                    msg: 'Error occured while deleting the game due to invalid ID provided.'
+                }],
+                errCode: 400
             });
         };
     } catch (err) {
         res.status(500).send({
-            err: err ? err : 'Error occured while deleting the game.'
+            errType: 'Other',
+            errBody: [{
+                msg: err || 'Error occured while deleting the game.'
+            }],
+            errCode: 500
         });
     };
 };

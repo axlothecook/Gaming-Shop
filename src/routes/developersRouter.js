@@ -8,7 +8,7 @@ const {
 var timeout = require('connect-timeout');
 
 developersRouter.get('/', developersController.getAllDevelopers);
-// developersRouter.get('/new', developersController.getCreateDeveloper);
+
 developersRouter.post('/new',
   timeout('5s'), 
   haltOnTimedout, 

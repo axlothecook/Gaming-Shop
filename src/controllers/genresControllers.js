@@ -37,18 +37,11 @@ const validateUpdateGenre = [
 // GET ALL GENRES
 const getAllGenres = async (req, res) => {
     try {
-        console.log("GETTING ALL GENRES");
         const projectFields = { _id: 1, name: 1, url: 1 };
         const sortBy = { name: 1 };
         const db = getDb();
         const genreArr = await db.collection(path).find().project(projectFields).sort(sortBy).toArray();
 
-        // res.render('category', {
-        //     title: 'Genres',
-        //     navLinks,
-        //     path,
-        //     arr: genreArr
-        // });
         res.status(200).send({
             success: true,
             data: {
@@ -58,36 +51,23 @@ const getAllGenres = async (req, res) => {
             }
         });
     } catch (err) {
-        // throw new Error(`Error occured while fetching all genres.`, err);
         res.status(500).send({
-            err: err ? err : 'Error occured while fetching all genres.'
+            errType: 'Other',
+            errBody: err || 'Error occured while fetching all genres.',
+            errCode: 500
         });
     };
 };
 
 // GET INDIVIDUAL GENRE INFO
 const getSpecificGenre = async (req, res) => {
-    console.log('FETCHING SINGLE GENRE INFO');
     try {
-        console.log(req.params.id);
         if (ObjectId.isValid(req.params.id)) {
             const db = getDb();
             const genre = await db.collection(path).findOne({ _id: new ObjectId(req.params.id) });
-            console.log(genre);
             const projectFields = { description: 0, isDefault: 0 };
             const sortBy = { name: 1 };
             const productsArr = await db.collection(gamesPath).find({ genres: genre.name }).sort(sortBy).project(projectFields).toArray();
-            // console.log(productsArr);
-
-            // res.render('partials/genreAndDevTemplate', {
-            //     title: `${genre.name}`,
-            //     btnTitle: 'Go back to categories',
-            //     path,
-            //     imgStyling: '70% 120%',
-            //     navLinks,
-            //     category: genre,
-            //     productsArr,
-            // });
             res.status(200).send({
                 success: true,
                 data: {
@@ -97,15 +77,17 @@ const getSpecificGenre = async (req, res) => {
                 }
             });
         } else {
-            console.log('id is not valid');
-            res.status(500).send({
-                err: err ? err : 'Error occured while retrieving the genre due to invalid ID provided.'
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: 'Error occured while retrieving the genre data due to invalid ID provided.',
+                errCode: 400
             });
         };
     } catch (err) {
-        console.log('smt else');
         res.status(500).send({
-            err: err ? err : 'Error occured while fetching the genre.'
+            errType: 'Other',
+            errBody: err || 'Error occured while fetching genre information.',
+            errCode: 500
         });
     }
 };
@@ -115,23 +97,9 @@ const postCreateGenre = [
     validateGenre,
     async (req, res) => {
         try {
-            console.log('POSTING NEW GENRE');
-            console.log('req.body: ', req.body);
-
             if (req.err) {
-                console.log('req.err: ', req.err);
-                // return res.status(400).render('createGenreAndDev', {
-                //     title: 'Add a new genre',
-                //     btnTitle: 'Go back',
-                //     navLinks,
-                //     path,
-                //     errors: [{
-                //         msg: req.err
-                //     }]
-                // });
-
                 res.status(400).send({
-                    errTpe: 'Multer',
+                    errType: 'File Upload Error',
                     errBody: errors.array(),
                     errCode: 400
                 });
@@ -139,45 +107,23 @@ const postCreateGenre = [
             
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                console.log('errors.isEmpty():', errors.isEmpty());
-                // return res.status(400).render('createGenreAndDev', {
-                //     title: 'Add a new genre',
-                //     btnTitle: 'Go back',
-                //     navLinks,
-                //     path,
-                //     errors: errors.array(),
-                // });
                 res.status(400).send({
-                    errTpe: 'Validation',
+                    errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
                 });
             };
             
-
-            console.log('passed');
-            console.log('req.file: ', req.file);
             const { name } = matchedData(req);
-
             const db = getDb();
             const genreDb = db.collection(path);
             const checkIfGenreAlreadyExists = await genreDb.findOne({ name: name });
-            console.log('checkIfGenreAlreadyExists:', checkIfGenreAlreadyExists);
 
             if (checkIfGenreAlreadyExists) {
-                // return res.status(400).render('createGenreAndDev', {
-                //     title: 'Add a new genre',
-                //     btnTitle: 'Go back',
-                //     navLinks,
-                //     path,
-                //     errors: [{
-                //         msg: 'Genre already exists.'
-                //     }]
-                // });
-                res.status(404).send({
-                    errType: "Already exists",
-                    errBody: 'A genre with the same name already exists.',
-                    errCode: 404
+                res.status(400).send({ 
+                    errType: 'Duplicate Item',
+                    err: 'A genre of the same name already exists.',
+                    errCode: 400
                 });
             } else {
                 const file = req.file;
@@ -190,16 +136,18 @@ const postCreateGenre = [
                     cacheControl: '1',
                     upsert: false
                 });
-                console.log('data from supabase:');
-                console.log(data);
-                if (error != null) throw error;
+
+                if (error != null) {
+                    res.status(500).send({ 
+                        errType: 'Supabase Error',
+                        err: error || 'Failed to upload the image file.',
+                        errCode: 500
+                    });
+                };
 
                 const { data: obj } = supabase.storage
                 .from('genres-user-photos')
                 .getPublicUrl(data.path);
-
-                console.log('link from supabase:');
-                console.log(obj);
 
                 await genreDb.insertOne({
                     name: name,
@@ -209,22 +157,16 @@ const postCreateGenre = [
                     isDefault: false
                 });
                 const newGenre = await genreDb.findOne({ name: name });
-                console.log('newGenre:');
-                console.log(newGenre);
 
-                // res.redirect(`/${path}/${newGenre._id}`);
                 res.status(200).send({
                     success: true,
-                    data: {
-                        gameID: newGenre._id
-                    }
+                    data: { gameID: newGenre._id }
                 });
             };
         } catch (err) {
-            // throw new Error(`Error occured while uploading photo of the genre.`, err);
             res.status(500).send({
-                errType: "Other",
-                errBody: 'Error occured while creating a new genre.',
+                errType: 'Other',
+                errBody: err || 'Error occured while creating a new genre.',
                 errCode: 500
             });
         };
@@ -234,20 +176,9 @@ const postCreateGenre = [
 // UPDATE GENRE
 const getUpdateGenre = async (req, res) => {
     try {
-        console.log('GETTING GENRE UPDATE');
         if (ObjectId.isValid(req.params.id)) {
             const db = getDb();
             const genre = await db.collection(path).findOne({ _id: new ObjectId(req.params.id) });
-            console.log(genre);
-
-            // res.render('editGenreAndDev', {
-            //     title: `Edit ${genre.name}`,
-            //     btnTitle: `Return to ${genre.name}`,
-            //     navLinks,
-            //     path,
-            //     category: genre,
-            //     errors: null
-            // });
 
             res.status(200).send({
                 success: true,
@@ -256,16 +187,19 @@ const getUpdateGenre = async (req, res) => {
                     genre
                 }
             });
+
         } else {
-            console.log('id is not valid');
-            res.status(500).send({
-                err: err ? err : 'Error occured while retrieving the genre due to invalid ID provided.'
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: 'Error occured while retrieving the genre data due to invalid ID provided.',
+                errCode: 400
             });
         };
     } catch (err) {
-        console.log('smt else');
         res.status(500).send({
-            err: err ? err : 'Error occured while fetching the genre.'
+            errType: 'Other',
+            errBody: err || 'Error occured while fetching the genre data.',
+            errCode: 500
         });
     };
 };
@@ -273,8 +207,6 @@ const getUpdateGenre = async (req, res) => {
 const postUpdateGenre = [
     validateUpdateGenre,
     async (req, res) => {
-        console.log('POSTED GENRE UPDATE');
-
         if (ObjectId.isValid(req.params.id)) {
             const db = getDb();
             const gamesDb = db.collection(gamesPath);
@@ -282,51 +214,29 @@ const postUpdateGenre = [
             const genre = await genreDb.findOne({ _id: new ObjectId(req.params.id) });
 
             if (req.err) {
-                console.log(req.err);
-                // return res.status(400).render('editGenreAndDev', {
-                //     title: `Edit ${genre.name}`,
-                //     btnTitle: `Return to ${genre.name}`,
-                //     navLinks,
-                //     path,
-                //     category: genre,
-                //     errors: [{
-                //         msg: req.err
-                //     }]
-                // });
-
                 res.status(400).send({
-                    errTpe: 'Multer',
-                    errBody: errors.array(),
+                    errType: 'Failed File Upload',
+                    errBody: [{
+                        msg: req.err
+                    }],
                     errCode: 400
                 });
             };
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                console.log(errors.array());
-                // return res.status(400).render('editGenreAndDev', {
-                //     title: `Edit ${genre.name}`,
-                //     btnTitle: `Return to ${genre.name}`,
-                //     navLinks,
-                //     path,
-                //     category: genre,
-                //     errors: errors.array(),
-                // });
-
                 res.status(400).send({
-                    errTpe: 'Validation',
+                    errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
                 });
             };
 
             try {
-                console.log('everything good');
                 const { name } = matchedData(req);
                 const projectFields = { _id: 1, name: 1, genres: 1 };
                 const gamesToUpdate = await gamesDb.find({ genres: genre.name }).project(projectFields).toArray();
                 let updateDoc;
-                // console.log(genre);
 
                 if (req.file) {
                     const file = req.file;
@@ -338,20 +248,39 @@ const postUpdateGenre = [
                         cacheControl: '1',
                         upsert: false
                     });
-                    if (error != null) throw error;
+
+                    if (error != null) {
+                        res.status(500).send({ 
+                            errType: 'Supabase Error',
+                            errBody: [{
+                                msg: error || 'Failed to upload the image file.'
+                            }],
+                            errCode: 500
+                        });
+                    };
 
                     const { data: obj } = supabase.storage
                     .from('genres-user-photos')
                     .getPublicUrl(data.path);
 
-                    if (req.body.name.length > 0 && genre.name !== name) {
-                        updateDoc = {
-                            $set: {
-                                name: name,
-                                url: `url(${obj.publicUrl})`
-                            }
+                    if (req.body.name.length > 0) { 
+                        if (genre.name !== name) {
+                            updateDoc = {
+                                $set: {
+                                    name: name,
+                                    url: `url(${obj.publicUrl})`
+                                }
+                            };
+                            await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name, name);
+                        } else {
+                            res.status(400).send({ 
+                                errType: 'Duplicate Item',
+                                errBody: [{
+                                    msg: 'A genre of the same name already exists.'
+                                }],
+                                errCode: 400
+                            });
                         };
-                        await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name, name);
                     } else {
                         updateDoc = {
                             $set: {
@@ -360,41 +289,47 @@ const postUpdateGenre = [
                         };
                     };
                 } else {
-                    if (req.body.name.length > 0 && genre.name !== name) {
-                        console.log('proceeding w update');
-                        updateDoc = {
-                            $set: {
-                                name: name
-                            }
+                    if (req.body.name.length > 0) {
+                        if (genre.name !== name) {
+                            updateDoc = {
+                                $set: {
+                                    name: name
+                                }
+                            };
+                            await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name, name);
+                        } else {
+                            res.status(400).send({ 
+                                errType: 'Duplicate Item',
+                                errBody: [{
+                                    msg: 'A genre of the same name already exists.'
+                                }],
+                                errCode: 400
+                            });
                         };
-                        await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name, name);
-                    } else console.log('no update');
+                    };
                 };
-                if (req.file || (req.body.name.length > 0 && genre.name !== name)) {
+                if (req.file || req.body.name.length) {
                     const query = { _id: new ObjectId(req.params.id) };
                     await genreDb.updateOne(query, updateDoc);
                 };
 
-                res.status(200).send({
-                    success: true,
-                });
-                // res.redirect(`/${path}/${req.params.id}`);
+                res.status(200).send({ success: true });
             } catch (err) {
-                // throw new Error(`Error occured while uploading genre data`, err);
                 res.status(500).send({
-                    errType: "Other",
-                    errBody: 'Error occured while uploading update',
+                    errType: 'Other',
+                    errBody: [{
+                        msg: err || 'Error occured while updating the genre.'
+                    }],
                     errCode: 500
                 });
             };
-
         } else {
-            // throw new Error(`Invalid genre id`, err);
-            // res.redirect(`/games/${req.params.id}`);
-            res.status(500).send({
-                errType: "ID",
-                errBody: 'Error occured due to invalid id.',
-                errCode: 500
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: [{
+                    msg: 'Error occured while retrieving updating developer data due to invalid ID provided.'
+                }],
+                errCode: 400
             });
         };
     }
@@ -403,7 +338,6 @@ const postUpdateGenre = [
 // DELETE GENRE
 const getDeleteGenre = async (req, res) => {
     try {
-        console.log('DELETING GENRE');
         if (ObjectId.isValid(req.params.id)) {
             const db = getDb();
             const gamesDb = db.collection(gamesPath);
@@ -412,11 +346,9 @@ const getDeleteGenre = async (req, res) => {
 
             const projectFields = { _id: 1, name: 1, genres: 1 };
             const gamesToUpdate = await gamesDb.find({ genres: genre.name }).project(projectFields).toArray();
-            console.log('gamesToUpdate: ', gamesToUpdate);
             let warning = [];
             if (gamesToUpdate.length > 0) warning = gamesToUpdate.filter(game => game.genres.length === 1);
             if (warning.length === 0) {
-                console.log('warning = 0');
                 if (gamesToUpdate.length > 0) await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name);
 
                 const { data, error } = await supabase
@@ -424,31 +356,43 @@ const getDeleteGenre = async (req, res) => {
                 .from('genres-user-photos')
                 .remove([genre.imgName])
 
-                console.log('genre deletion img:', data);
+                if (error != null) {
+                    res.status(500).send({ 
+                        errType: 'Supabase Error',
+                        errBody: [{
+                            msg: error || 'Failed to delete the image file.'
+                        }],
+                        errCode: 500
+                    });
+                };
 
-                if (error != null) throw error;
-
-                const deleteResult = await genreDb.deleteOne({ _id: new ObjectId(req.params.id) });
-                console.log('mongodb genre dlt: ', deleteResult);
-                // res.redirect('/genres');
-                res.status(200).send({
-                    success: true,
-                });
+                await genreDb.deleteOne({ _id: new ObjectId(req.params.id) });
+                res.status(200).send({ success: true });
             } else {
-                console.error('Error: ', warning);
-                // res.redirect(`/${path}/${req.params.id}`);
-                res.status(500).send({
-                    err: warning
+                res.status(400).send({ 
+                    errType: 'Unable to Delete',
+                    errBody: [{
+                        msg: 'Unable to delete the genre as it is the only genre to at least one if its games.'
+                    }],
+                    errCode: 400
                 });
             };
         } else {
-            res.status(500).send({
-                err: err ? err : 'Error occured while deleting the genre due to invalid ID provided.'
+            res.status(400).send({
+                errType: 'Invalid ID',
+                errBody: [{
+                    msg: 'Error occured while deleting the genre due to invalid ID provided.'
+                }],
+                errCode: 400
             });
         };
     } catch (err) {
         res.status(500).send({
-            err: err ? err : 'Error occured while deleting the genre.'
+            errType: 'Other',
+            errBody: [{
+                msg: err || 'Error occured while deleting the genre.'
+            }],
+            errCode: 500
         });
     };
 };
@@ -456,8 +400,7 @@ const getDeleteGenre = async (req, res) => {
 module.exports = {
     getAllGenres,
     getSpecificGenre,
-
-    // getCreateGenre,
+    
     postCreateGenre,
 
     getUpdateGenre,
