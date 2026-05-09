@@ -73,7 +73,8 @@ const getSpecificGenre = async (req, res) => {
                 data: {
                     path,
                     genre,
-                    productsArr
+                    productsArr,
+                    numberOfGames: productsArr.length
                 }
             });
         } else {
@@ -153,7 +154,6 @@ const postCreateGenre = [
                     name: name,
                     url: `url(${obj.publicUrl})`,
                     imgName: data.path,
-                    numberOfGames: 0,
                     isDefault: false
                 });
                 const newGenre = await genreDb.findOne({ name: name });

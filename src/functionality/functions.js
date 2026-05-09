@@ -81,36 +81,10 @@ const updateGamesGenreArr = async (arr, db, genreToRemove, newName = null) => {
     });
 };
 
-// for /games route
-const updateMultiple = async (arr, db, oldArr = []) => {
-    const updateDoc = { $inc: { numberOfGames: 1 } };
-    console.log('arr: ', arr);
-    console.log('oldArr: ', oldArr);
-    if (oldArr.length === 0) {
-        console.log('updating all here: ', arr);
-        arr.forEach(async item => await db.updateOne({ name: item }, updateDoc));
-    } else {
-        console.log('waht');
-        let newArr = (typeof arr === 'string') ? [arr] : arr;
-        let removedItemsArr = [];
-        const removeDoc = { $inc: { numberOfGames: -1 } };
-        oldArr.forEach(item => { 
-            if (!newArr.includes(item)) removedItemsArr.push(item);
-            if (newArr.includes(item)) {
-                const index = newArr.indexOf(item);
-                if (index > -1) newArr.splice(index, 1);
-            };
-        });
-        console.log('updating: ', newArr);
-        newArr.forEach(async item => await db.updateOne({ name: item }, updateDoc));
-        if (removedItemsArr.length > 0) removedItemsArr.forEach(async item => await db.updateOne({ name: item }, removeDoc));
-    };
-};
-
 // for /developers route
 const updateGamesDevArray = async (arr, db, devToRemove, newName = null) => {
     let tempArr = arr;
-    console.log('tempArr: ', tempArr);
+    // console.log('tempArr: ', tempArr);
     tempArr.map(async game => {
         let tempDevArr = game.developers;
         const index = tempDevArr.indexOf(devToRemove);
@@ -140,6 +114,5 @@ module.exports = {
     filterQuery,
     paginationProcessing,
     updateGamesGenreArr,
-    updateGamesDevArray,
-    updateMultiple,
+    updateGamesDevArray
 };

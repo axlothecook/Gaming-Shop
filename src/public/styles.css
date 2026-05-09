@@ -66,7 +66,6 @@ a:hover, li:hover {
 
 select {
   min-width: 15rem;
-  padding: .5rem;
   border-radius: 7px;
   background-color: var(--main-bg-clr);
   border-color: var(--main-txt-clr);
@@ -104,23 +103,27 @@ option:hover {
   background-color: #5a0317;
 }
 
-option:first-of-type {
+/* option:first-of-type {
   border-radius: 8px 0 0 0;
 }
 
 option:last-of-type {
   border-radius: 0 0 0px 8px;
-}
+} */
 
 option:not(option:last-of-type) {
   border-bottom: none;
 }
 
-option::checkmark {
+/* option::checkmark {
+  display: none;
+} */
+
+/* option::checkmark {
   order: 1;
   margin-left: auto;
   content: "☑️";
-}
+} */
 
 ::picker(select) {
   opacity: 0;

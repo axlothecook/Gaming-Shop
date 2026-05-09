@@ -8,7 +8,7 @@ const {
 const {
     navLinks,
     alphaErr,
-    lengthErr,
+    lengthErr
 } = require('../../data');
 
 const gamesPath = process.env.GAMES_PATH;

@@ -76,7 +76,8 @@ const getSpecificDeveloper= async (req, res) => {
                 data: {
                     path,
                     dev,
-                    productsArr
+                    productsArr,
+                    numberOfGames: productsArr.length
                 }
             });
         } else {
@@ -166,7 +167,6 @@ const postCreateDeveloper = [
                     name: name,
                     url: `url(${obj.publicUrl})`,
                     imgName: data.path,
-                    numberOfGames: 0,
                     isDefault: false
                 });
                 const newDev = await devDb.findOne({ name: name });

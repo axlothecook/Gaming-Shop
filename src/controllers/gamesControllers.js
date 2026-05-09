@@ -21,9 +21,14 @@ const {
 const {
     generateName,
     filterQuery,
-    paginationProcessing,
-    updateMultiple,
+    paginationProcessing
 } = require('../functionality/functions');
+const {
+    countByArrayField,
+    countByScalarField,
+    countByFirstLetter,
+    countByPriceBucket
+} = require('../functionality/aggregation');
 
 const path = parsed.GAMES_PATH;
 const devPath = parsed.DEV_PATH;
@@ -64,32 +69,43 @@ const getQuery = (query) => {
     return resultQuery;
 };
 
+const buildFilterWithout = (query, omitKey) => {
+    const trimmed = { ...query };
+    delete trimmed[omitKey];
+    delete trimmed.page;   // pagination/sort never affect counts
+    delete trimmed.sort; // delete?
+    return getQuery(trimmed) || {};
+};
+
 // RENDER PRODUCTS PAGE
 const getProducts = async (req, res) => {
     try {
         console.log('query: ', req.query);
         console.log('pag: ', req.pagination);
         const projectFieldsGames = { description: 0, isDefault: 0 };
-        const projectFieldsOther = { name: 1, numberOfGames: 1 };
         const sortGamesBy = { name: req.query.sort ? parseInt(req.query.sort) : 1 };
         const sortOtherBy = { name: 1 };
         const db = getDb();
         const gamesDb = db.collection(path);
         const genreDb = db.collection(genresPath);
         const devDb = db.collection(devPath);
-        const genreArr = await genreDb.find().sort(sortOtherBy).project(projectFieldsOther).toArray();
-        const devArr = await devDb.find().sort(sortOtherBy).project(projectFieldsOther).toArray();
+        const genreArr = await genreDb.find().sort(sortOtherBy).project({ name: 1 }).toArray();
+        const devArr = await devDb.find().sort(sortOtherBy).project({ name: 1 }).toArray();
         const { limit, skip } = req.pagination;
         const filter = getQuery(req.query);
-        // let filter = { genres: 'Adventure' };
-        // const filter = null;
-        // console.log('filter: ', filter);
-        const productsArr = filter 
-            ? await gamesDb.find(filter).sort(sortGamesBy).project(projectFieldsGames).toArray()
-            : await gamesDb.find({}, { limit, skip }).sort(sortGamesBy).project(projectFieldsGames).toArray();
-
+        const cursor = filter 
+            ? gamesDb.find(filter)
+            : gamesDb.find({});
+        const productsArr =  await cursor.sort(sortGamesBy).project(projectFieldsGames).skip(skip).limit(limit).toArray();
         const pagesCount = await paginationProcessing(limit, gamesDb, filter);
-        // console.log('pagesCount: ', pagesCount);
+        const [Name, Rating, Genres, Developers, Price] = await Promise.all([
+            countByFirstLetter(gamesDb,  buildFilterWithout(req.query, 'Name')),
+            countByScalarField(gamesDb,  buildFilterWithout(req.query, 'Rating'), 'rating'),
+            countByArrayField(gamesDb,   buildFilterWithout(req.query, 'Genres'), 'genres'),
+            countByArrayField(gamesDb,   buildFilterWithout(req.query, 'Developers'), 'developers'),
+            countByPriceBucket(gamesDb,  buildFilterWithout(req.query, 'Price'))
+        ]);
+        const counts = { Name, Rating, Genres, Developers, Price };
         res.status(200).send({
             success: true,
             data: {
@@ -100,7 +116,8 @@ const getProducts = async (req, res) => {
                 sortInputArr,
                 priceArray,
                 ratingArray,
-                pagesCount
+                pagesCount,
+                counts
             }
         });
     } catch (err) {
@@ -181,8 +198,6 @@ const postNewProduct = [
             const genreDb = await db.collection(genresPath);
             const devDb = await db.collection(devPath);
             const gamesDb = await db.collection(path);
-            const genreArr = await genreDb.find().project({ name: 1 }).toArray();
-            const devArr = await devDb.find().project({ name: 1 }).toArray();
 
             if (req.err) {
                 res.status(400).send({
@@ -253,8 +268,6 @@ const postNewProduct = [
 
                 await gamesDb.insertOne(newObj);
                 const newGame = await gamesDb.findOne({ name: inputData.name });
-                await updateMultiple(newGame.genres, genreDb);
-                await updateMultiple(newGame.developers, devDb);
 
                 res.status(200).send({
                     success: true,
@@ -315,10 +328,6 @@ const postUpdateProduct = [
     validateProduct,
     async (req, res) => {
         const db = getDb();
-        const genreDb = await db.collection(genresPath);
-        const genreArr = await genreDb.find().project({ name: 1 }).toArray();
-        const devDb = await db.collection(devPath);
-        const devArr = await devDb.find().project({ name: 1 }).toArray();
         const gamesDb = await db.collection(path);
 
         if (ObjectId.isValid(req.params.id)) {
@@ -408,8 +417,6 @@ const postUpdateProduct = [
                 };
                 const query = { _id: new ObjectId(req.params.id) };
                 await gamesDb.updateOne(query, updateDoc);
-                await updateMultiple(updatedData.genre, genreDb, originalGame.genres);
-                await updateMultiple(updatedData.dev, devDb, originalGame.developers);
                 res.status(200).send({ success: true });
             } catch (err) {
                 res.status(500).send({
@@ -437,8 +444,6 @@ const getDeleteProduct = async (req, res) => {
     try {
         if (ObjectId.isValid(req.params.id)) {
             const db = getDb();
-            const devDb = db.collection(devPath);
-            const genreDb = db.collection(genresPath);
             const gamesDb = db.collection(path);
             const game = await gamesDb.findOne({ _id: new ObjectId(req.params.id) });
 
@@ -457,9 +462,6 @@ const getDeleteProduct = async (req, res) => {
                 });
             };
 
-            const updateDoc = { $inc: { numberOfGames: -1 } };
-            game.genres.forEach(async item => await genreDb.updateOne({ name: item }, updateDoc));
-            game.developers.forEach(async item => await devDb.updateOne({ name: item }, updateDoc));
             await gamesDb.deleteOne({ _id: new ObjectId(req.params.id) });
             res.status(200).send({ success: true });
         } else {
