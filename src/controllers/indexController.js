@@ -8,10 +8,15 @@ const {
 const {
     navLinks,
     alphaErr,
-    lengthErr
+    lengthErr,
+    // genreArr,
+    // devArr,
+    // gamesArr
 } = require('../../data');
 
 const gamesPath = process.env.GAMES_PATH;
+// const devPath = process.env.DEV_PATH;
+// const genresPath = process.env.GENRE_PATH;
 
 const validateSearchProduct = [
     query('searchString').trim()
@@ -21,6 +26,11 @@ const validateSearchProduct = [
 
 const getHomepage = async (req, res) => {
     try {
+        // const db = getDb();
+        // const result1 = await db.collection(gamesPath).insertMany(gamesArr);
+        // const result2 = await db.collection(devPath).insertMany(devArr);
+        // const result3 = await db.collection(genresPath).insertMany(genreArr);
+        // console.log(result1, result2, result3);
         res.status(200).send({
             success: true,
             data: navLinks
