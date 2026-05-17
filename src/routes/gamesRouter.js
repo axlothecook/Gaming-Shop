@@ -18,9 +18,6 @@ gamesRouter.post('/new',
   function (req, res, next) {
     saveFile(req, res, function (err) {
       if (err) {
-        console.log('initial game upload error did get delivered');
-        console.log(err instanceof Error)
-        console.log(err.message);
         req.err = err.message;
       }
       if (req.timedout) {
@@ -43,8 +40,6 @@ gamesRouter.post('/:id/update',
   function (req, res, next) {
     saveFile(req, res, function (err) {
       if (err) {
-        console.log('game update error did get delivered');
-        console.log(err.message);
         req.err = err.message;
       }
       if (req.timedout) {

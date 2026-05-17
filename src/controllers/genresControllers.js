@@ -99,22 +99,24 @@ const postCreateGenre = [
     async (req, res) => {
         try {
             if (req.err) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'File Upload Error',
-                    errBody: errors.array(),
+                    errBody: [{
+                        msg: req.err
+                    }],
                     errCode: 400
                 });
             };
-            
+
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
                 });
             };
-            
+
             const { name } = matchedData(req);
             const db = getDb();
             const genreDb = db.collection(path);
@@ -139,7 +141,7 @@ const postCreateGenre = [
                 });
 
                 if (error != null) {
-                    res.status(500).send({ 
+                    return res.status(500).send({
                         errType: 'Supabase Error',
                         err: error || 'Failed to upload the image file.',
                         errCode: 500
@@ -152,7 +154,7 @@ const postCreateGenre = [
 
                 await genreDb.insertOne({
                     name: name,
-                    url: `url(${obj.publicUrl})`,
+                    url: obj.publicUrl,
                     imgName: data.path,
                     isDefault: false
                 });
@@ -214,7 +216,7 @@ const postUpdateGenre = [
             const genre = await genreDb.findOne({ _id: new ObjectId(req.params.id) });
 
             if (req.err) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Failed File Upload',
                     errBody: [{
                         msg: req.err
@@ -225,7 +227,7 @@ const postUpdateGenre = [
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
@@ -236,7 +238,28 @@ const postUpdateGenre = [
                 const { name } = matchedData(req);
                 const projectFields = { _id: 1, name: 1, genres: 1 };
                 const gamesToUpdate = await gamesDb.find({ genres: genre.name }).project(projectFields).toArray();
-                let updateDoc;
+                const updateDoc = { $set: {} };
+
+                const nameProvided = req.body.name && req.body.name.length > 0;
+                const nameChanged = nameProvided && genre.name !== name;
+
+                if (nameChanged) {
+                    const nameTaken = await genreDb.findOne({
+                        name: name,
+                        _id: { $ne: new ObjectId(req.params.id) }
+                    });
+                    if (nameTaken) {
+                        return res.status(400).send({
+                            errType: 'Duplicate Item',
+                            errBody: [{
+                                msg: 'A genre of the same name already exists.'
+                            }],
+                            errCode: 400
+                        });
+                    };
+                    updateDoc.$set.name = name;
+                    await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name, name);
+                };
 
                 if (req.file) {
                     const file = req.file;
@@ -250,7 +273,7 @@ const postUpdateGenre = [
                     });
 
                     if (error != null) {
-                        res.status(500).send({ 
+                        return res.status(500).send({
                             errType: 'Supabase Error',
                             errBody: [{
                                 msg: error || 'Failed to upload the image file.'
@@ -263,52 +286,10 @@ const postUpdateGenre = [
                     .from('genres-user-photos')
                     .getPublicUrl(data.path);
 
-                    if (req.body.name.length > 0) { 
-                        if (genre.name !== name) {
-                            updateDoc = {
-                                $set: {
-                                    name: name,
-                                    url: `url(${obj.publicUrl})`
-                                }
-                            };
-                            await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name, name);
-                        } else {
-                            res.status(400).send({ 
-                                errType: 'Duplicate Item',
-                                errBody: [{
-                                    msg: 'A genre of the same name already exists.'
-                                }],
-                                errCode: 400
-                            });
-                        };
-                    } else {
-                        updateDoc = {
-                            $set: {
-                                url: `url(${obj.publicUrl})`
-                            }
-                        };
-                    };
-                } else {
-                    if (req.body.name.length > 0) {
-                        if (genre.name !== name) {
-                            updateDoc = {
-                                $set: {
-                                    name: name
-                                }
-                            };
-                            await updateGamesGenreArr(gamesToUpdate, gamesDb, genre.name, name);
-                        } else {
-                            res.status(400).send({ 
-                                errType: 'Duplicate Item',
-                                errBody: [{
-                                    msg: 'A genre of the same name already exists.'
-                                }],
-                                errCode: 400
-                            });
-                        };
-                    };
+                    updateDoc.$set.url = obj.publicUrl;
                 };
-                if (req.file || req.body.name.length) {
+
+                if (Object.keys(updateDoc.$set).length > 0) {
                     const query = { _id: new ObjectId(req.params.id) };
                     await genreDb.updateOne(query, updateDoc);
                 };
@@ -357,7 +338,7 @@ const getDeleteGenre = async (req, res) => {
                 .remove([genre.imgName])
 
                 if (error != null) {
-                    res.status(500).send({ 
+                    return res.status(500).send({
                         errType: 'Supabase Error',
                         errBody: [{
                             msg: error || 'Failed to delete the image file.'

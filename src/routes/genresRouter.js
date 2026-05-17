@@ -15,9 +15,6 @@ genresRouter.post('/new',
   function (req, res, next) {
     saveFile(req, res, function (err) {
       if (err) {
-        console.log('error did get delivered');
-        console.log(err instanceof Error)
-        console.log(err.message);
         req.err = err.message;
       }
       if (req.timedout) {
@@ -41,9 +38,6 @@ genresRouter.post('/:id/update',
   function (req, res, next) {
     saveFile(req, res, function (err) {
       if (err) {
-        console.log('genre error did get delivered');
-        console.log(err instanceof Error)
-        console.log(err.message);
         req.err = err.message;
       }
       if (req.timedout) {

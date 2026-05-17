@@ -1,6 +1,5 @@
 const { ObjectId } = require('mongodb');
 
-// for all
 const generateName = (originalName) => {
   let rename = originalName;
   if (/\s/g.test(originalName)) rename = rename.replace(" ", "-");
@@ -58,11 +57,8 @@ const filterQuery = (() => {
     };
 })();
 
-// for /genres route
 const updateGamesGenreArr = async (arr, db, genreToRemove, newName = null) => {
     let tempArr = arr;
-    // console.log('tempArr: ', tempArr);
-    // console.log('genreToRemove: ', genreToRemove);
     tempArr.map(async game => {
         let tempGenreArr = game.genres;
         const index = tempGenreArr.indexOf(genreToRemove);
@@ -81,10 +77,8 @@ const updateGamesGenreArr = async (arr, db, genreToRemove, newName = null) => {
     });
 };
 
-// for /developers route
 const updateGamesDevArray = async (arr, db, devToRemove, newName = null) => {
     let tempArr = arr;
-    // console.log('tempArr: ', tempArr);
     tempArr.map(async game => {
         let tempDevArr = game.developers;
         const index = tempDevArr.indexOf(devToRemove);
@@ -103,7 +97,6 @@ const updateGamesDevArray = async (arr, db, devToRemove, newName = null) => {
     });
 };
 
-// for pagination
 const paginationProcessing = async (limit = 12, db, filter) => {
     let total = (filter) ? await db.countDocuments(filter) : await db.countDocuments();
     return (total > limit) ? Math.ceil(total / limit) : 1;

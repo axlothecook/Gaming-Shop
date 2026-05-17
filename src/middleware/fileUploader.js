@@ -19,17 +19,12 @@ const uploadMiddleware = multer({
 const processingResults = (req, res, err) => {
   if (err instanceof multer.MulterError) {
     // A Multer error occurred when uploading.
-    console.log('multer error');
-    console.log(err);
     return err;
   } else if (err) {
     // An unknown error occurred when uploading.
-    console.log('unknown error');
-    console.log(err);
     return err;
   } else {
     // Everything went fine.
-    console.log('no error');
     return req.file;
   };
 };
@@ -42,7 +37,6 @@ async function saveFile (req, res, cb) {
   let results;
   await uploadMiddleware(req, res, (err) => {
     results = processingResults(req, res, err);
-    // console.log('results: ', results);
   });
 
   setTimeout(function () {
@@ -50,7 +44,6 @@ async function saveFile (req, res, cb) {
     if (results instanceof Error) {
       err = results;
     } else err = null;
-    // console.log('results: ', results);
     cb(err);
   }, 1000);
 };

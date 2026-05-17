@@ -106,7 +106,7 @@ const postCreateDeveloper = [
     async (req, res) => {
         try {
             if (req.err) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Failed File Upload',
                     errBody: [{
                         msg: req.err
@@ -117,7 +117,7 @@ const postCreateDeveloper = [
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
@@ -150,7 +150,7 @@ const postCreateDeveloper = [
                 });
 
                 if (error != null) {
-                    res.status(500).send({ 
+                    return res.status(500).send({
                         errType: 'Supabase Error',
                         errBody: [{
                             msg: error || 'Failed to upload the image file.'
@@ -165,7 +165,7 @@ const postCreateDeveloper = [
 
                 await devDb.insertOne({
                     name: name,
-                    url: `url(${obj.publicUrl})`,
+                    url: obj.publicUrl,
                     imgName: data.path,
                     isDefault: false
                 });
@@ -232,7 +232,7 @@ const postUpdateDeveloper = [
             const devDb = await db.collection(path);
             const dev = await devDb.findOne({ _id: new ObjectId(req.params.id) });
             if (req.err) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Failed File Upload',
                     errBody: [{
                         msg: req.err
@@ -243,7 +243,7 @@ const postUpdateDeveloper = [
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
@@ -254,7 +254,29 @@ const postUpdateDeveloper = [
                 const { name } = matchedData(req);
                 const projectFields = { _id: 1, name: 1, developers: 1 };
                 const gamesToUpdate = await gamesDb.find({ developers: dev.name }).project(projectFields).toArray();
-                let updateDoc;
+                const updateDoc = { $set: {} };
+
+                const nameProvided = req.body.name && req.body.name.length > 0;
+                const nameChanged = nameProvided && dev.name !== name;
+
+                if (nameChanged) {
+                    const nameTaken = await devDb.findOne({
+                        name: name,
+                        _id: { $ne: new ObjectId(req.params.id) }
+                    });
+                    if (nameTaken) {
+                        return res.status(400).send({
+                            errType: 'Duplicate Item',
+                            errBody: [{
+                                msg: 'A developer of the same name already exists.'
+                            }],
+                            errCode: 400
+                        });
+                    };
+                    updateDoc.$set.name = name;
+                    await updateGamesDevArray(gamesToUpdate, gamesDb, dev.name, name);
+                };
+
                 if (req.file) {
                     const file = req.file;
                     const fileBase64 = decode(file.buffer.toString('base64'));
@@ -267,7 +289,7 @@ const postUpdateDeveloper = [
                     });
 
                     if (error != null) {
-                        res.status(500).send({ 
+                        return res.status(500).send({
                             errType: 'Supabase Error',
                             errBody: [{
                                 msg: error || 'Failed to upload the image file.'
@@ -279,52 +301,11 @@ const postUpdateDeveloper = [
                     const { data: obj } = supabase.storage
                     .from('devs-user-photos')
                     .getPublicUrl(data.path);
-                    if (req.body.name.length > 0) {
-                        if (dev.name !== name) {
-                            updateDoc = {
-                                $set: {
-                                    name: name,
-                                    url: `url(${obj.publicUrl})`
-                                }
-                            };
-                            await updateGamesDevArray(gamesToUpdate, gamesDb, dev.name, name);
-                        } else {
-                            res.status(400).send({ 
-                                errType: 'Duplicate Item',
-                                errBody: [{
-                                    msg: 'A developer of the same name already exists.'
-                                }],
-                                errCode: 400
-                            });
-                        };
-                    } else {
-                        updateDoc = {
-                            $set: {
-                                url: `url(${obj.publicUrl})`
-                            }
-                        };
-                    };
-                } else {
-                    if (req.body.name.length > 0) {
-                        if (dev.name !== name) {
-                            updateDoc = {
-                                $set: {
-                                    name: name
-                                }
-                            };
-                            await updateGamesDevArray(gamesToUpdate, gamesDb, dev.name, name);
-                        } else {
-                            res.status(400).send({ 
-                                errType: 'Duplicate Item',
-                                errBody: [{
-                                    msg: 'A developer of the same name already exists.'
-                                }],
-                                errCode: 400
-                            });
-                        };
-                    };
+
+                    updateDoc.$set.url = obj.publicUrl;
                 };
-                if (req.file || req.body.name.length > 0) {
+
+                if (Object.keys(updateDoc.$set).length > 0) {
                     const query = { _id: new ObjectId(req.params.id) };
                     await devDb.updateOne(query, updateDoc);
                 };
@@ -373,7 +354,7 @@ const getDeleteDeveloper = async (req, res) => {
                 .remove([dev.imgName])
 
                 if (error != null) {
-                    res.status(500).send({ 
+                    return res.status(500).send({
                         errType: 'Supabase Error',
                         errBody: [{
                             msg: error || 'Failed to delete the image file.'

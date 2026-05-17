@@ -72,16 +72,14 @@ const getQuery = (query) => {
 const buildFilterWithout = (query, omitKey) => {
     const trimmed = { ...query };
     delete trimmed[omitKey];
-    delete trimmed.page;   // pagination/sort never affect counts
-    delete trimmed.sort; // delete?
+    delete trimmed.page;
+    delete trimmed.sort;
     return getQuery(trimmed) || {};
 };
 
 // RENDER PRODUCTS PAGE
 const getProducts = async (req, res) => {
     try {
-        console.log('query: ', req.query);
-        console.log('pag: ', req.pagination);
         const projectFieldsGames = { description: 0, isDefault: 0 };
         const sortGamesBy = { name: req.query.sort ? parseInt(req.query.sort) : 1 };
         const sortOtherBy = { name: 1 };
@@ -200,7 +198,7 @@ const postNewProduct = [
             const gamesDb = await db.collection(path);
 
             if (req.err) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Failed File Upload',
                     errBody: [{
                         msg: req.err
@@ -211,7 +209,7 @@ const postNewProduct = [
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
@@ -241,7 +239,7 @@ const postNewProduct = [
                 });
 
                 if (error != null) {
-                    res.status(500).send({ 
+                    return res.status(500).send({
                         errType: 'Supabase Error',
                         errBody: [{
                             msg: error || 'Failed to upload the image file.'
@@ -256,7 +254,7 @@ const postNewProduct = [
 
                 const newObj = {
                     name: inputData.name,
-                    url: `url(${obj.publicUrl})`,
+                    url: obj.publicUrl,
                     imgName: data.path,
                     genres: (typeof inputData.genre === 'string') ? [inputData.genre] : inputData.genre, 
                     developers: (typeof inputData.dev === 'string') ? [inputData.dev] : inputData.dev,
@@ -334,7 +332,7 @@ const postUpdateProduct = [
             const originalGame = await gamesDb.findOne({ _id: new ObjectId(req.params.id) });
 
             if (req.err) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Failed File Upload',
                     errBody: [{
                         msg: req.err
@@ -345,7 +343,7 @@ const postUpdateProduct = [
 
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                res.status(400).send({
+                return res.status(400).send({
                     errType: 'Invalid Input',
                     errBody: errors.array(),
                     errCode: 400
@@ -354,9 +352,12 @@ const postUpdateProduct = [
 
             try {
                 const updatedData = matchedData(req);
-                const checkIfGameAlreadyExists = await gamesDb.find({ name: updatedData.name }).project({ name: 1 }).toArray();
+                const checkIfGameAlreadyExists = await gamesDb.find({
+                    name: updatedData.name,
+                    _id: { $ne: new ObjectId(req.params.id) }
+                }).project({ name: 1 }).toArray();
                 if (checkIfGameAlreadyExists.length > 0) {
-                    res.status(400).send({ 
+                    return res.status(400).send({
                         errType: 'Duplicate Item',
                         errBody: [{
                             msg: 'A game of the same name already exists.'
@@ -378,7 +379,7 @@ const postUpdateProduct = [
                     });
 
                     if (error != null) {
-                        res.status(500).send({ 
+                        return res.status(500).send({
                             errType: 'Supabase Error',
                             errBody: [{
                                 msg: error || 'Failed to upload the image file.'
@@ -394,7 +395,7 @@ const postUpdateProduct = [
                     updateDoc = {
                         $set: {
                             name: updatedData.name ? updatedData.name : originalGame.name,
-                            url: `url(${obj.publicUrl})`,
+                            url: obj.publicUrl,
                             imgName: data.path,
                             price: updatedData.price ? parseInt(updatedData.price) : originalGame.price,
                             rating: updatedData.rating ? parseInt(updatedData.rating) : originalGame.rating,
@@ -453,7 +454,7 @@ const getDeleteProduct = async (req, res) => {
             .remove([game.imgName])
 
             if (error != null) {
-                res.status(500).send({ 
+                return res.status(500).send({
                     errType: 'Supabase Error',
                     errBody: [{
                         msg: error || 'Failed to delete the image file.'
