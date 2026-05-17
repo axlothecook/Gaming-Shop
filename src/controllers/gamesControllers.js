@@ -2,7 +2,7 @@ const { getDb } = require('../db/initiate');
 const supabase = require('../../supabase');
 const { ObjectId } = require('mongodb');
 const { decode }  = require('base64-arraybuffer');
-const { parsed } = require('dotenv').config();
+require('dotenv').config();
 const _ = require('lodash'); 
 const {
     body,
@@ -30,9 +30,9 @@ const {
     countByPriceBucket
 } = require('../functionality/aggregation');
 
-const path = parsed.GAMES_PATH;
-const devPath = parsed.DEV_PATH;
-const genresPath = parsed.GENRE_PATH;
+const path = process.env.GAMES_PATH;
+const devPath = process.env.DEV_PATH;
+const genresPath = process.env.GENRE_PATH;
 
 const validateProduct = [
     body('name').trim()
