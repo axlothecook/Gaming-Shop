@@ -1,5 +1,5 @@
 const { getDb } = require('../db/initiate');
-const supabase = require('../../supabase');
+const supabase = require('../../storage'); // R2-backed, supabase-compatible API
 const { ObjectId } = require('mongodb');
 const { decode }  = require('base64-arraybuffer');
 require('dotenv').config();
