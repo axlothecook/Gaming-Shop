@@ -15,21 +15,21 @@ const navLinks = [
         id: 1,
         href: '/games',
         text: 'Games',
-        imgPath: 'url(https://qyuaermixhugwrlhhvkr.supabase.co/storage/v1/object/public/basic-page-files/bg1.jpg)',
+        imgPath: 'url(https://images.axlothecook.com/gameshop/basic-page-files/bg1.jpg)',
         txtClr: '#000'
     },
     {
         id: 2,
         href: '/genres',
         text: 'Genres',
-        imgPath: 'url(https://qyuaermixhugwrlhhvkr.supabase.co/storage/v1/object/public/basic-page-files/bg3.jpg)',
+        imgPath: 'url(https://images.axlothecook.com/gameshop/basic-page-files/bg3.jpg)',
         txtClr: '#fff'
     },
     {
         id: 3,
         href: '/developers',
         text: 'Developers',
-        imgPath: 'url(https://qyuaermixhugwrlhhvkr.supabase.co/storage/v1/object/public/basic-page-files/bg2.jpg)',
+        imgPath: 'url(https://images.axlothecook.com/gameshop/basic-page-files/bg2.jpg)',
         txtClr: '#fff'
     }
 ];

@@ -105,4 +105,7 @@ function from(bucketName) {
   };
 }
 
-module.exports = { from };
+// The Supabase client the controllers replaced exposed storage ops under a
+// `.storage` namespace (supabase.storage.from(...)). Mirror that shape so the
+// existing call-sites work unchanged.
+module.exports = { storage: { from } };
