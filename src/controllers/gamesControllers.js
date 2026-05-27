@@ -1,5 +1,5 @@
 const { getDb } = require('../db/initiate');
-const supabase = require('../../storage'); // R2-backed, supabase-compatible API
+const storageClient = require('../../storage'); // R2-backed storage (S3/Cloudflare R2)
 const { ObjectId } = require('mongodb');
 const { decode }  = require('base64-arraybuffer');
 require('dotenv').config();
@@ -230,7 +230,7 @@ const postNewProduct = [
                 const file = req.file;
                 const newName = generateName(file.originalname);
                 const fileBase64 = decode(file.buffer.toString('base64'));
-                const { data, error } = await supabase.storage
+                const { data, error } = await storageClient.storage
                 .from('games-user-photos')
                 .upload(newName, fileBase64, {
                     contentType: file.mimetype,
@@ -240,7 +240,7 @@ const postNewProduct = [
 
                 if (error != null) {
                     return res.status(500).send({
-                        errType: 'Supabase Error',
+                        errType: 'Storage Error',
                         errBody: [{
                             msg: error || 'Failed to upload the image file.'
                         }],
@@ -248,7 +248,7 @@ const postNewProduct = [
                     });
                 };
 
-                const { data: obj } = supabase.storage
+                const { data: obj } = storageClient.storage
                 .from('games-user-photos')
                 .getPublicUrl(data.path);
 
@@ -370,7 +370,7 @@ const postUpdateProduct = [
                 if (req.file) {
                     const file = req.file;
                     const fileBase64 = decode(file.buffer.toString('base64'));
-                    const { data, error } = await supabase.storage
+                    const { data, error } = await storageClient.storage
                     .from('games-user-photos')
                     .update(originalGame.imgName, fileBase64, {
                         contentType: file.mimetype,
@@ -380,7 +380,7 @@ const postUpdateProduct = [
 
                     if (error != null) {
                         return res.status(500).send({
-                            errType: 'Supabase Error',
+                            errType: 'Storage Error',
                             errBody: [{
                                 msg: error || 'Failed to upload the image file.'
                             }],
@@ -388,7 +388,7 @@ const postUpdateProduct = [
                         });
                     };
 
-                    const { data: obj } = supabase.storage
+                    const { data: obj } = storageClient.storage
                     .from('games-user-photos')
                     .getPublicUrl(data.path);
 
@@ -448,14 +448,14 @@ const getDeleteProduct = async (req, res) => {
             const gamesDb = db.collection(path);
             const game = await gamesDb.findOne({ _id: new ObjectId(req.params.id) });
 
-            const { data, error } = await supabase
+            const { data, error } = await storageClient
             .storage
             .from('games-user-photos')
             .remove([game.imgName])
 
             if (error != null) {
                 return res.status(500).send({
-                    errType: 'Supabase Error',
+                    errType: 'Storage Error',
                     errBody: [{
                         msg: error || 'Failed to delete the image file.'
                     }],
