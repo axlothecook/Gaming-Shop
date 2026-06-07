@@ -367,12 +367,18 @@ const postUpdateProduct = [
                 };
 
                 let updateDoc;
+                let oldImgNameToRemove = null;
                 if (req.file) {
                     const file = req.file;
                     const fileBase64 = decode(file.buffer.toString('base64'));
+                    // Upload under a NEW versioned key (generateName is timestamp-based)
+                    // rather than overwriting the existing one. A new key means a new
+                    // public URL, so the 4h images.axlothecook.com edge cache can never
+                    // serve the previous (stale) image after an edit.
+                    const newName = generateName(file.originalname);
                     const { data, error } = await storageClient.storage
                     .from('games-user-photos')
-                    .update(originalGame.imgName, fileBase64, {
+                    .upload(newName, fileBase64, {
                         contentType: file.mimetype,
                         cacheControl: '1',
                         upsert: false
@@ -391,6 +397,11 @@ const postUpdateProduct = [
                     const { data: obj } = storageClient.storage
                     .from('games-user-photos')
                     .getPublicUrl(data.path);
+
+                    // The previous object is now orphaned (every game has a unique key,
+                    // verified against the DB). Remember it; delete AFTER the Mongo write
+                    // succeeds so a failed delete can never lose the new image reference.
+                    oldImgNameToRemove = originalGame.imgName;
 
                     updateDoc = {
                         $set: {
@@ -418,6 +429,20 @@ const postUpdateProduct = [
                 };
                 const query = { _id: new ObjectId(req.params.id) };
                 await gamesDb.updateOne(query, updateDoc);
+
+                // Best-effort cleanup of the now-orphaned old image. Done AFTER the
+                // DB points at the new key, and never allowed to fail the request:
+                // a leftover object is harmless, a lost new image is not.
+                if (oldImgNameToRemove) {
+                    try {
+                        await storageClient.storage
+                        .from('games-user-photos')
+                        .remove([oldImgNameToRemove]);
+                    } catch (cleanupErr) {
+                        console.error('Failed to remove old image object:', oldImgNameToRemove, cleanupErr);
+                    };
+                };
+
                 res.status(200).send({ success: true });
             } catch (err) {
                 res.status(500).send({

@@ -3,6 +3,11 @@
 API-only backend for the Gaming Shop inventory app — Node.js + Express + MongoDB
 CRUD over games, genres, and developers.
 
+## Related repositories
+
+- [Front end](https://github.com/axlothecook/Gaming-shop-frontend.git)
+- [gaming-shop-deploy](https://github.com/axlothecook/gaming-shop-deploy)
+
 ## Stack (what each tool is for)
 
 - **Express 5** — the HTTP API / routing.
