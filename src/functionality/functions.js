@@ -2,9 +2,12 @@ const { ObjectId } = require('mongodb');
 
 const generateName = (originalName) => {
   let rename = originalName;
-  if (/\s/g.test(originalName)) rename = rename.replace(" ", "-");
-  const num = Math.floor(Math.random() * 100);
-  return num + '-' + rename;
+  if (/\s/g.test(originalName)) rename = rename.replace(/\s+/g, "-");
+  // Timestamp prefix makes every upload a UNIQUE R2 key. On an image UPDATE we
+  // therefore write a NEW key + URL instead of overwriting the old one, so the
+  // images.axlothecook.com edge cache (max-age 4h) can never serve a stale image.
+  const stamp = Date.now();
+  return stamp + '-' + rename;
 };
 
 const filterQuery = (() => {

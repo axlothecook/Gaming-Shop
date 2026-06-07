@@ -277,12 +277,17 @@ const postUpdateDeveloper = [
                     await updateGamesDevArray(gamesToUpdate, gamesDb, dev.name, name);
                 };
 
+                let oldImgNameToRemove = null;
                 if (req.file) {
                     const file = req.file;
                     const fileBase64 = decode(file.buffer.toString('base64'));
+                    // Upload under a NEW versioned key instead of overwriting the old
+                    // one, so the 4h images.axlothecook.com edge cache can never serve
+                    // the previous (stale) image after an edit.
+                    const newName = generateName(file.originalname);
                     const { data, error } = await storageClient.storage
                     .from('devs-user-photos')
-                    .update(dev.imgName, fileBase64, {
+                    .upload(newName, fileBase64, {
                         contentType: file.mimetype,
                         cacheControl: '1',
                         upsert: false
@@ -303,12 +308,27 @@ const postUpdateDeveloper = [
                     .getPublicUrl(data.path);
 
                     updateDoc.$set.url = obj.publicUrl;
+                    updateDoc.$set.imgName = data.path;
+                    oldImgNameToRemove = dev.imgName;
                 };
 
                 if (Object.keys(updateDoc.$set).length > 0) {
                     const query = { _id: new ObjectId(req.params.id) };
                     await devDb.updateOne(query, updateDoc);
                 };
+
+                // Best-effort cleanup of the now-orphaned old image, AFTER the DB
+                // points at the new key; never allowed to fail the request.
+                if (oldImgNameToRemove) {
+                    try {
+                        await storageClient.storage
+                        .from('devs-user-photos')
+                        .remove([oldImgNameToRemove]);
+                    } catch (cleanupErr) {
+                        console.error('Failed to remove old image object:', oldImgNameToRemove, cleanupErr);
+                    };
+                };
+
                 res.status(200).send({ success: true });
             } catch (err) {
                 res.status(500).send({

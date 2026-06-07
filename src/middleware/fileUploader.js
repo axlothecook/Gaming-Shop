@@ -11,14 +11,24 @@ const fileFilter = (req, file, cb) => {
 
 const storage = multer.memoryStorage();
 
-const uploadMiddleware = multer({ 
+// 3.5MB cap, matched on the frontend by adapter-node's BODY_SIZE_LIMIT. The
+// frontend rejects anything larger before it reaches here; this is the backend
+// backstop so an oversized file yields a clean LIMIT_FILE_SIZE error, not a hang.
+const MAX_FILE_SIZE = 3500000;
+
+const uploadMiddleware = multer({
   fileFilter: fileFilter,
-  storage: storage, 
+  storage: storage,
+  limits: { fileSize: MAX_FILE_SIZE },
 }).single('file');
 
 const processingResults = (req, res, err) => {
   if (err instanceof multer.MulterError) {
-    // A Multer error occurred when uploading.
+    // A Multer error occurred when uploading. Give a friendlier message for the
+    // size limit specifically (LIMIT_FILE_SIZE) since users will hit it most.
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return new Error('Image is too large. Maximum size is 3.5MB.');
+    }
     return err;
   } else if (err) {
     // An unknown error occurred when uploading.
