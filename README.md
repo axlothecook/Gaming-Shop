@@ -1,6 +1,7 @@
 # Gaming shop backend
 The REST API of the Gaming Shop, built with Express and MongoDB. Only the frontend server talks to it, over the private Docker network; the API has no public address at all.
 <br />
+<br />
 
 ## What it does
 <ul> 
