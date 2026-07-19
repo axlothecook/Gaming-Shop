@@ -14,6 +14,7 @@ The REST API of the Gaming Shop, built with Express and MongoDB. Only the fronte
 
 There is no login: the shop is a smaller-scale demo.
 <br />
+<br />
 
 ## Why no graph here
 The backend's place in the system is already drawn twice: the [frontend README](https://github.com/axlothecook/Gaming-shop-frontend/blob/main/README.md) shows how requests travel through it, and the [umbrella README](https://github.com/axlothecook/gameshop/blob/main/README.md) shows how the repos are connected. A third graph of this repo alone would just repeat those two, so this README skips it.
