@@ -17,13 +17,16 @@ There is no login: the shop is a smaller-scale demo.
 ## Why no graph here
 The backend's place in the system is already drawn twice: the [frontend README](https://github.com/axlothecook/Gaming-shop-frontend/blob/main/README.md) shows how requests travel through it, and the [umbrella README](https://github.com/axlothecook/gameshop/blob/main/README.md) shows how the repos are connected. A third graph of this repo alone would just repeat those two, so this README skips it.
 <br />
+<br />
 
 ## The image storage story
 Images originally lived on Supabase, but its free tier pauses projects after 7 days without traffic, which kept taking the images down. I migrated to Cloudflare R2 and wrote a small wrapper (storage.js) that keeps the old Supabase-style interface, so the controllers didn't have to change; they still call storage.from().upload() and remove(), but R2 answers now.
 <br />
+<br />
 
 ## Deployment
 CI builds the arm64 Docker image and pushes it to GHCR on every push to main, but this repo's pipeline is build-only: the new image goes live with the next stack restart on the Pi. The pipeline family is explained in [homelab-ci-cd](https://github.com/axlothecook/homelab-ci-cd).
+<br />
 <br />
 
 ## Tech stack
